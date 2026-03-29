@@ -67,9 +67,52 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #10131a; }
     ::-webkit-scrollbar-thumb { background: #32353c; border-radius: 3px; }
+
+    /* MOBILE RESPONSIVE */
+    @media (max-width: 768px) {
+      body { overflow-y: auto; overflow-x: hidden; }
+      #dashboard { height: auto; min-height: 100vh; }
+      #dashboard > .flex.flex-1 { flex-direction: column; height: auto; }
+      /* Header */
+      #dashboard > header { flex-wrap: wrap; gap: 8px; height: auto; padding: 8px 12px; }
+      #dashboard > header > div:first-child h1 { font-size: 11px; }
+      #dashboard > header > div:first-child p { display: none; }
+      #dashboard > header > div:nth-child(2) { order: 3; width: 100%; justify-content: center; }
+      /* Left sidebar */
+      #dashboard > .flex.flex-1 > aside:first-child { width: 100%; border-right: none; border-bottom: 1px solid #32353c; max-height: 180px; overflow-y: auto; }
+      #dashboard > .flex.flex-1 > aside:first-child .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+      /* Map */
+      #dashboard > .flex.flex-1 > .flex.flex-1.flex-col { min-height: 350px; }
+      #leafletMap { min-height: 300px; }
+      /* Right panel */
+      #dashboard > .flex.flex-1 > aside:last-child { width: 100%; border-left: none; border-top: 1px solid #32353c; }
+      /* Timeline */
+      .flex.h-40 { height: auto; min-height: 120px; }
+      /* Alarm overlay */
+      #alarmOverlay > .relative.z-10 { max-width: 100%; margin: 8px; max-height: 95vh; }
+      #alarmOverlay .grid.md\\:grid-cols-2 { grid-template-columns: 1fr; gap: 24px; }
+      #alarmOverlay .p-8 { padding: 16px; }
+      #alarmOverlay h1 { font-size: 16px; }
+      /* Route info */
+      #routeInfo { top: 8px; right: 8px; }
+      /* Corner warnings */
+      #alarmOverlay > .absolute.left-4 { left: 8px; top: 8px; padding: 4px 8px; }
+      #alarmOverlay > .absolute.right-4 { right: 8px; top: 8px; padding: 4px 8px; }
+      /* Contact list */
+      #contactList a { padding: 8px; }
+      #contactList .w-8 { width: 28px; height: 28px; }
+    }
+
+    @media (max-width: 480px) {
+      #dashboard > header > div:nth-child(3) { flex-wrap: wrap; gap: 4px; }
+      #dashboard > header > div:nth-child(3) .rounded-md { display: none; }
+      #dashboard > .flex.flex-1 > aside:first-child { max-height: 140px; }
+      #alarmOverlay h1 { font-size: 14px; }
+      #alarmOverlay .font-headline.text-xl { font-size: 16px; }
+    }
   </style>
 </head>
-<body class="bg-surface text-on-surface font-body overflow-hidden h-screen">
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen md:overflow-hidden">
 
 <!-- ==================== MAIN DASHBOARD ==================== -->
 <div id="dashboard" class="flex flex-col h-screen">
