@@ -89,10 +89,17 @@
       /* Timeline */
       .flex.h-40 { height: auto; min-height: 120px; }
       /* Alarm overlay */
-      #alarmOverlay > .relative.z-10 { max-width: 100%; margin: 8px; max-height: 95vh; }
-      #alarmOverlay .grid.md\\:grid-cols-2 { grid-template-columns: 1fr; gap: 24px; }
-      #alarmOverlay .p-8 { padding: 16px; }
-      #alarmOverlay h1 { font-size: 16px; }
+      #alarmOverlay { align-items: flex-start !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+      #alarmOverlay > .relative.z-10 { max-width: 100%; margin: 8px; max-height: none; overflow: visible; }
+      #alarmOverlay .grid.md\\:grid-cols-2 { grid-template-columns: 1fr; gap: 16px; }
+      #alarmOverlay .p-8 { padding: 12px; }
+      #alarmOverlay h1 { font-size: 14px; }
+      #alarmOverlay .text-2xl { font-size: 18px; }
+      #alarmOverlay .py-6 { padding-top: 16px; padding-bottom: 16px; }
+      #alarmOverlay .p-6 { padding: 12px; }
+      #alarmOverlay .space-y-8 > * + * { margin-top: 16px; }
+      #contactList a { padding: 8px; }
+      #contactList .p-3 { padding: 6px 8px; }
       /* Route info */
       #routeInfo { top: 8px; right: 8px; }
       /* Corner warnings */
@@ -605,7 +612,8 @@ function updateNodeList() {
   const statusIcon = s.alarm ? 'local_fire_department' : (s.status === 'online' ? 'check_circle' : 'wifi_off');
   const statusColor = s.alarm ? 'text-alarm' : (s.status === 'online' ? 'text-ok' : 'text-offline');
   const statusBg = s.alarm ? 'bg-alarm/20' : (s.status === 'online' ? 'bg-ok/20' : 'bg-offline/20');
-  const smokeColor = s.smoke > 70 ? 'bg-alarm' : (s.smoke > 40 ? 'bg-warning' : 'bg-ok');
+  var nodeSmokePct = Math.round((s.smoke / 1023) * 100);
+  const smokeColor = nodeSmokePct > 70 ? 'bg-alarm' : (nodeSmokePct > 40 ? 'bg-warning' : 'bg-ok');
 
   document.getElementById('nodeList').innerHTML = `
     <button class="flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-all ${statusClass}">
@@ -618,8 +626,8 @@ function updateNodeList() {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5">
           <span class="material-symbols-outlined text-xs text-on-surface-variant/40">local_fire_department</span>
-          <div class="h-1.5 w-16 overflow-hidden rounded-full bg-surface-variant"><div class="h-full ${smokeColor} smoke-bar" style="width:${Math.min(s.smoke, 100)}%"></div></div>
-          <span class="font-mono text-[10px] text-on-surface-variant/60">${s.smoke}</span>
+          <div class="h-1.5 w-16 overflow-hidden rounded-full bg-surface-variant"><div class="h-full ${smokeColor} smoke-bar" style="width:${Math.min(nodeSmokePct, 100)}%"></div></div>
+          <span class="font-mono text-[10px] text-on-surface-variant/60">${nodeSmokePct}%</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-0.5">
@@ -639,11 +647,13 @@ function updateRightPanel() {
   else if (s.status === 'online') { badge.textContent = 'Хэвийн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-ok/20 text-ok'; }
   else { badge.textContent = 'Офлайн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-offline/20 text-offline'; }
   // Smoke
-  const smokeColor = s.smoke > 70 ? 'text-alarm' : (s.smoke > 40 ? 'text-warning' : 'text-ok');
-  const smokeBarColor = s.smoke > 70 ? 'bg-alarm' : (s.smoke > 40 ? 'bg-warning' : 'bg-ok');
-  document.getElementById('smokeValue').textContent = s.smoke + '%';
+  // smoke raw утга (0-1023) → хувь (0-100%) болгох
+  var smokePct = Math.round((s.smoke / 1023) * 100);
+  const smokeColor = smokePct > 70 ? 'text-alarm' : (smokePct > 40 ? 'text-warning' : 'text-ok');
+  const smokeBarColor = smokePct > 70 ? 'bg-alarm' : (smokePct > 40 ? 'bg-warning' : 'bg-ok');
+  document.getElementById('smokeValue').textContent = smokePct + '%';
   document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold ' + smokeColor;
-  document.getElementById('smokeBar').style.width = Math.min(s.smoke, 100) + '%';
+  document.getElementById('smokeBar').style.width = Math.min(smokePct, 100) + '%';
   document.getElementById('smokeBar').className = 'h-full smoke-bar ' + smokeBarColor;
   // Battery
   const battColor = s.battery > 50 ? 'text-ok' : (s.battery > 20 ? 'text-warning' : 'text-alarm');
@@ -684,9 +694,10 @@ function updateTimeline() {
 function showAlarm(event) {
   alarmActive = true;
   alarmStartTime = Date.now();
-  document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+  document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto';
   document.getElementById('alarmDevice').textContent = event.deviceId || 'fire-node-01';
-  document.getElementById('alarmSmoke').textContent = event.smoke || lastStatus.smoke;
+  var alarmSmokePct = Math.round(((event.smoke || lastStatus.smoke) / 1023) * 100);
+  document.getElementById('alarmSmoke').textContent = alarmSmokePct + '%';
   alarmTimerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - alarmStartTime) / 1000);
     const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
