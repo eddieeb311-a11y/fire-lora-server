@@ -16,6 +16,13 @@ const PORT = process.env.PORT || 3000;
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || 'YOUR_BOT_TOKEN';
 const CHAT_ID = process.env.CHAT_ID || 'YOUR_CHAT_ID';
 
+// ===== Бүртгэлтэй хэрэглэгчид (alarm мэдэгдэл хүлээн авах) =====
+let registeredUsers = {};
+// Admin chat ID-г автоматаар нэмэх
+if (CHAT_ID && CHAT_ID !== 'YOUR_CHAT_ID') {
+  registeredUsers[CHAT_ID] = { name: 'Admin', registered: new Date().toISOString() };
+}
+
 // ===== Өгөгдөл хадгалах =====
 let history = [];
 let lastStatus = {
@@ -90,6 +97,18 @@ app.post('/ttn-webhook', async (req, res) => {
 });
 
 // ===== Telegram =====
+async function sendTelegramTo(chatId, message, parseMode = 'Markdown') {
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: parseMode })
+    });
+  } catch (err) {
+    console.error('Telegram send error:', err);
+  }
+}
+
 async function sendTelegram(event) {
   if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === 'YOUR_BOT_TOKEN') return;
 
@@ -103,20 +122,119 @@ async function sendTelegram(event) {
     `🕐 Цаг: ${event.time}\n\n` +
     `❗ ЯАРАЛТАЙ АРГА ХЭМЖЭЭ АВНА УУ!`;
 
-  try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    });
-  } catch (err) {
-    console.error('Telegram error:', err);
+  // Бүх бүртгэлтэй хэрэглэгчид рүү илгээх
+  const chatIds = Object.keys(registeredUsers);
+  if (chatIds.length === 0 && CHAT_ID && CHAT_ID !== 'YOUR_CHAT_ID') {
+    chatIds.push(CHAT_ID);
+  }
+  for (const cid of chatIds) {
+    await sendTelegramTo(cid, message);
   }
 }
+
+// ===== Telegram Bot Polling =====
+let telegramOffset = 0;
+
+async function pollTelegram() {
+  if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === 'YOUR_BOT_TOKEN') return;
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getUpdates?offset=${telegramOffset}&timeout=5`);
+    const data = await res.json();
+    if (!data.ok || !data.result) return;
+
+    for (const update of data.result) {
+      telegramOffset = update.update_id + 1;
+      const msg = update.message;
+      if (!msg || !msg.text) continue;
+
+      const chatId = msg.chat.id.toString();
+      const text = msg.text.trim();
+      const firstName = msg.chat.first_name || 'Хэрэглэгч';
+
+      if (text === '/start') {
+        const welcome =
+          `🛡 *Онцгой Байдлын Хяналтын Систем*\n\n` +
+          `Сайн байна уу, ${firstName}!\n\n` +
+          `📋 *Команд жагсаалт:*\n` +
+          `/status — Одоогийн статус харах\n` +
+          `/register — Alarm мэдэгдэл хүлээн авах бүртгүүлэх\n` +
+          `/unregister — Бүртгэлээс гарах\n` +
+          `/test — Тест alarm илгээх\n` +
+          `/help — Тусламж\n\n` +
+          `🔥 Галын дохио ирэхэд бүртгэлтэй хэрэглэгчид рүү автоматаар мэдэгдэл очно.`;
+        await sendTelegramTo(chatId, welcome);
+      }
+
+      else if (text === '/status') {
+        const s = lastStatus;
+        const statusEmoji = s.alarm ? '🔴 ALARM' : (s.status === 'online' ? '🟢 Хэвийн' : '⚫ Офлайн');
+        const statusMsg =
+          `📊 *Системийн Статус*\n\n` +
+          `${statusEmoji}\n` +
+          `📍 Төхөөрөмж: ${s.deviceId}\n` +
+          `💨 Утааны түвшин: ${s.smoke}\n` +
+          `🔋 Батарей: ${s.battery}%\n` +
+          `🔔 Нийт дохио: ${s.totalAlarms}\n` +
+          `🕐 Сүүлд: ${s.lastSeen || 'Мэдээлэл байхгүй'}\n\n` +
+          `👥 Бүртгэлтэй: ${Object.keys(registeredUsers).length} хэрэглэгч`;
+        await sendTelegramTo(chatId, statusMsg);
+      }
+
+      else if (text === '/register') {
+        if (registeredUsers[chatId]) {
+          await sendTelegramTo(chatId, `✅ ${firstName}, та аль хэдийн бүртгэлтэй байна!`);
+        } else {
+          registeredUsers[chatId] = { name: firstName, registered: new Date().toISOString() };
+          const count = Object.keys(registeredUsers).length;
+          await sendTelegramTo(chatId, `✅ *Амжилттай бүртгэгдлээ!*\n\n${firstName}, та одоо галын дохионы мэдэгдэл хүлээн авна.\n\n👥 Нийт бүртгэлтэй: ${count} хэрэглэгч`);
+        }
+      }
+
+      else if (text === '/unregister') {
+        if (registeredUsers[chatId]) {
+          delete registeredUsers[chatId];
+          await sendTelegramTo(chatId, `❌ ${firstName}, та бүртгэлээс гарлаа. Цаашид alarm мэдэгдэл ирэхгүй.`);
+        } else {
+          await sendTelegramTo(chatId, `ℹ️ Та бүртгэлгүй байна. /register гэж бүртгүүлнэ үү.`);
+        }
+      }
+
+      else if (text === '/test') {
+        const now = new Date().toLocaleString('mn-MN', { timeZone: 'Asia/Ulaanbaatar' });
+        const event = {
+          deviceId: 'fire-node-01', alarm: true, source: 'TELEGRAM-TEST',
+          smoke: 750, battery: 85, time: now, rssi: -65, snr: 8.5
+        };
+        lastStatus.alarm = true;
+        lastStatus.source = 'TELEGRAM-TEST';
+        lastStatus.smoke = 750;
+        lastStatus.lastSeen = now;
+        lastStatus.status = 'online';
+        lastStatus.totalAlarms++;
+        history.unshift(event);
+        broadcast({ type: 'update', status: lastStatus, event: event });
+        await sendTelegram(event);
+      }
+
+      else if (text === '/help') {
+        await sendTelegramTo(chatId,
+          `🛡 *Тусламж*\n\n` +
+          `/status — Системийн статус\n` +
+          `/register — Мэдэгдэл авах бүртгүүлэх\n` +
+          `/unregister — Бүртгэлээс гарах\n` +
+          `/test — Тест alarm\n\n` +
+          `Галын дохио ирэхэд бүртгэлтэй бүх хэрэглэгчид рүү мэдэгдэл очно.`);
+      }
+    }
+  } catch (err) {
+    // Polling error - silent retry
+  }
+}
+
+// 3 секунд тутам Telegram шинэчлэлт шалгах
+setInterval(pollTelegram, 3000);
+pollTelegram();
 
 // ===== API =====
 app.get('/api/status', (req, res) => {
