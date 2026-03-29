@@ -256,25 +256,18 @@
         </div>
       </div>
 
-      <!-- Smoke Level -->
+      <!-- Fire Alarm Status -->
       <div class="border-b border-surface-variant p-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-sm text-on-surface-variant/60">local_fire_department</span>
-            <span class="text-xs font-medium text-on-surface-variant/60">Утааны түвшин</span>
+            <span class="text-xs font-medium text-on-surface-variant/60">Галын дохио</span>
           </div>
-          <span class="font-mono text-2xl font-bold" id="smokeValue">0%</span>
+          <span class="font-mono text-2xl font-bold" id="smokeValue">ХЭВИЙН</span>
         </div>
-        <div class="mt-3 space-y-1">
-          <div class="relative h-6 overflow-hidden rounded-lg bg-surface-variant">
-            <div class="h-full smoke-bar bg-ok" id="smokeBar" style="width:0%"></div>
-            <div class="absolute inset-0 flex">
-              <div class="w-[40%] border-r border-dashed border-on-surface/20"></div>
-              <div class="w-[30%] border-r border-dashed border-on-surface/20"></div>
-            </div>
-          </div>
-          <div class="flex justify-between text-[9px] text-on-surface-variant/40">
-            <span>0%</span><span class="text-warning">40%</span><span class="text-alarm">70%</span><span>100%</span>
+        <div class="mt-3">
+          <div class="h-6 overflow-hidden rounded-lg flex items-center justify-center" id="smokeBar" style="background:#1b5e20">
+            <span class="text-xs font-bold uppercase tracking-wider" id="smokeBarText">Идэвхгүй</span>
           </div>
         </div>
       </div>
@@ -367,10 +360,10 @@
             </div>
           </div>
           <div class="space-y-2">
-            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">УТААНЫ ТҮВШИН</span>
+            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">ДОХИОНЫ ТӨЛӨВ</span>
             <div class="bg-surface-container-high p-4 flex items-baseline gap-2">
-              <p class="font-headline text-2xl font-black text-primary" id="alarmSmoke">0</p>
-              <span class="material-symbols-outlined text-sm text-primary">trending_up</span>
+              <p class="font-headline text-2xl font-black text-primary" id="alarmSmoke">ИДЭВХТЭЙ</p>
+              <span class="material-symbols-outlined text-sm text-primary">warning</span>
             </div>
           </div>
         </div>
@@ -612,8 +605,7 @@ function updateNodeList() {
   const statusIcon = s.alarm ? 'local_fire_department' : (s.status === 'online' ? 'check_circle' : 'wifi_off');
   const statusColor = s.alarm ? 'text-alarm' : (s.status === 'online' ? 'text-ok' : 'text-offline');
   const statusBg = s.alarm ? 'bg-alarm/20' : (s.status === 'online' ? 'bg-ok/20' : 'bg-offline/20');
-  var nodeSmokePct = Math.round((s.smoke / 1023) * 100);
-  const smokeColor = nodeSmokePct > 70 ? 'bg-alarm' : (nodeSmokePct > 40 ? 'bg-warning' : 'bg-ok');
+  const smokeColor = s.alarm ? 'bg-alarm' : 'bg-ok';
 
   document.getElementById('nodeList').innerHTML = `
     <button class="flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-all ${statusClass}">
@@ -626,8 +618,8 @@ function updateNodeList() {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5">
           <span class="material-symbols-outlined text-xs text-on-surface-variant/40">local_fire_department</span>
-          <div class="h-1.5 w-16 overflow-hidden rounded-full bg-surface-variant"><div class="h-full ${smokeColor} smoke-bar" style="width:${Math.min(nodeSmokePct, 100)}%"></div></div>
-          <span class="font-mono text-[10px] text-on-surface-variant/60">${nodeSmokePct}%</span>
+          <div class="h-1.5 w-16 overflow-hidden rounded-full bg-surface-variant"><div class="h-full ${smokeColor} smoke-bar" style="width:${s.alarm ? 100 : 0}%"></div></div>
+          <span class="font-mono text-[10px] text-on-surface-variant/60">${s.alarm ? 'ALARM' : 'OK'}</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-0.5">
@@ -646,15 +638,18 @@ function updateRightPanel() {
   if (s.alarm) { badge.textContent = 'Аюултай!'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-alarm/20 text-alarm animate-pulse'; }
   else if (s.status === 'online') { badge.textContent = 'Хэвийн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-ok/20 text-ok'; }
   else { badge.textContent = 'Офлайн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-offline/20 text-offline'; }
-  // Smoke
-  // smoke raw утга (0-1023) → хувь (0-100%) болгох
-  var smokePct = Math.round((s.smoke / 1023) * 100);
-  const smokeColor = smokePct > 70 ? 'text-alarm' : (smokePct > 40 ? 'text-warning' : 'text-ok');
-  const smokeBarColor = smokePct > 70 ? 'bg-alarm' : (smokePct > 40 ? 'bg-warning' : 'bg-ok');
-  document.getElementById('smokeValue').textContent = smokePct + '%';
-  document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold ' + smokeColor;
-  document.getElementById('smokeBar').style.width = Math.min(smokePct, 100) + '%';
-  document.getElementById('smokeBar').className = 'h-full smoke-bar ' + smokeBarColor;
+  // Галын дохио: alarm = ИДЭВХТЭЙ, else = ХЭВИЙН
+  if (s.alarm) {
+    document.getElementById('smokeValue').textContent = 'ИДЭВХТЭЙ';
+    document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold text-alarm animate-pulse';
+    document.getElementById('smokeBar').style.background = '#b71c1c';
+    document.getElementById('smokeBarText').textContent = 'ГАЛ ИЛЭРСЭН!';
+  } else {
+    document.getElementById('smokeValue').textContent = 'ХЭВИЙН';
+    document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold text-ok';
+    document.getElementById('smokeBar').style.background = '#1b5e20';
+    document.getElementById('smokeBarText').textContent = 'Идэвхгүй';
+  }
   // Battery
   const battColor = s.battery > 50 ? 'text-ok' : (s.battery > 20 ? 'text-warning' : 'text-alarm');
   const battBarColor = s.battery > 50 ? 'bg-ok' : (s.battery > 20 ? 'bg-warning' : 'bg-alarm');
@@ -684,7 +679,7 @@ function updateTimeline() {
         <div class="flex h-7 w-7 items-center justify-center rounded-md ${bgColor}"><span class="material-symbols-outlined text-base ${iconColor}">${icon}</span></div>
         <div><p class="text-xs font-medium">${isAlarm ? 'ALARM' : 'OK'} — ${e.source}</p><p class="font-mono text-[10px] text-on-surface-variant/60">${e.deviceId}</p></div>
       </div>
-      <p class="text-xs">Утаа: ${e.smoke} | Батарей: ${e.battery}%</p>
+      <p class="text-xs">Дохио: ${e.alarm ? 'ИДЭВХТЭЙ' : 'Хэвийн'} | Батарей: ${e.battery}%</p>
       <div class="text-[10px] text-on-surface-variant/40 font-mono">${e.time}</div>
     </div>`;
   }).join('');
@@ -696,8 +691,7 @@ function showAlarm(event) {
   alarmStartTime = Date.now();
   document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto';
   document.getElementById('alarmDevice').textContent = event.deviceId || 'fire-node-01';
-  var alarmSmokePct = Math.round(((event.smoke || lastStatus.smoke) / 1023) * 100);
-  document.getElementById('alarmSmoke').textContent = alarmSmokePct + '%';
+  document.getElementById('alarmSmoke').textContent = 'ИДЭВХТЭЙ';
   alarmTimerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - alarmStartTime) / 1000);
     const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
