@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fire LoRa Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1923;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a2332, #243447);
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #2d4059;
+    }
+    .header h1 { font-size: 24px; color: #fff; }
+    .header .conn {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .conn.online { background: #00c853; color: #000; }
+    .conn.offline { background: #ff5252; color: #fff; }
+
+    .main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+    .status-banner {
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 24px;
+      transition: all 0.3s;
+    }
+    .status-banner.ok {
+      background: linear-gradient(135deg, #1b5e20, #2e7d32);
+      border: 2px solid #4caf50;
+    }
+    .status-banner.alarm {
+      background: linear-gradient(135deg, #b71c1c, #d32f2f);
+      border: 2px solid #ff5252;
+      animation: pulse 1s infinite;
+    }
+    .status-banner.offline {
+      background: linear-gradient(135deg, #37474f, #455a64);
+      border: 2px solid #607d8b;
+    }
+    .status-banner h2 { font-size: 36px; margin-bottom: 8px; }
+    .status-banner p { font-size: 16px; opacity: 0.9; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #1a2332;
+      border: 1px solid #2d4059;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .card .label { font-size: 13px; color: #8899aa; margin-bottom: 8px; }
+    .card .value { font-size: 28px; font-weight: bold; }
+    .card .unit { font-size: 14px; color: #8899aa; }
+
+    .history {
+      background: #1a2332;
+      border: 1px solid #2d4059;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .history h3 { margin-bottom: 16px; color: #fff; }
+    .history-list { max-height: 400px; overflow-y: auto; }
+    .event {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid #243447;
+      font-size: 14px;
+    }
+    .event:last-child { border-bottom: none; }
+    .event .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    .dot.alarm { background: #ff5252; }
+    .dot.ok { background: #4caf50; }
+    .event .info { flex: 1; }
+    .event .time { color: #8899aa; font-size: 12px; }
+
+    .test-btns {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .test-btns button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .btn-alarm { background: #d32f2f; color: #fff; }
+    .btn-ok { background: #2e7d32; color: #fff; }
+    .btn-alarm:hover { background: #f44336; }
+    .btn-ok:hover { background: #43a047; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Fire LoRa Dashboard</h1>
+  <span class="conn offline" id="connStatus">OFFLINE</span>
+</div>
+
+<div class="main">
+  <div class="status-banner offline" id="statusBanner">
+    <h2 id="statusText">Холбогдоогүй</h2>
+    <p id="statusSub">Төхөөрөмжөөс өгөгдөл хүлээж байна...</p>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Төхөөрөмж</div>
+      <div class="value" id="deviceId">---</div>
+    </div>
+    <div class="card">
+      <div class="label">Утааны түвшин</div>
+      <div class="value" id="smoke">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Батарей</div>
+      <div class="value"><span id="battery">0</span><span class="unit">%</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Нийт дохио</div>
+      <div class="value" id="totalAlarms">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Сүүлд холбогдсон</div>
+      <div class="value" style="font-size:16px" id="lastSeen">---</div>
+    </div>
+  </div>
+
+  <div class="test-btns">
+    <button class="btn-alarm" onclick="testAlarm()">ALARM TEST</button>
+    <button class="btn-ok" onclick="testOk()">OK TEST</button>
+  </div>
+
+  <div class="history">
+    <h3>Түүх</h3>
+    <div class="history-list" id="historyList">
+      <div class="event">
+        <div style="color:#8899aa">Одоогоор мэдээлэл байхгүй</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ws = new WebSocket('ws://' + location.host);
+
+  ws.onopen = function() {
+    document.getElementById('connStatus').textContent = 'CONNECTED';
+    document.getElementById('connStatus').className = 'conn online';
+  };
+
+  ws.onclose = function() {
+    document.getElementById('connStatus').textContent = 'OFFLINE';
+    document.getElementById('connStatus').className = 'conn offline';
+  };
+
+  ws.onmessage = function(msg) {
+    var data = JSON.parse(msg.data);
+    if (data.type === 'update') {
+      updateDashboard(data.status, data.event);
+    }
+  };
+
+  function updateDashboard(status, event) {
+    var banner = document.getElementById('statusBanner');
+    var text = document.getElementById('statusText');
+    var sub = document.getElementById('statusSub');
+
+    if (status.alarm) {
+      banner.className = 'status-banner alarm';
+      text.textContent = 'ГАЛЫН АЮУЛ!';
+      sub.textContent = 'Эх үүсвэр: ' + status.source;
+    } else {
+      banner.className = 'status-banner ok';
+      text.textContent = 'Хэвийн';
+      sub.textContent = 'Бүх систем хэвийн ажиллаж байна';
+    }
+
+    document.getElementById('deviceId').textContent = status.deviceId;
+    document.getElementById('smoke').textContent = status.smoke;
+    document.getElementById('battery').textContent = status.battery;
+    document.getElementById('totalAlarms').textContent = status.totalAlarms;
+    document.getElementById('lastSeen').textContent = status.lastSeen || '---';
+
+    if (event) addHistory(event);
+  }
+
+  function addHistory(event) {
+    var list = document.getElementById('historyList');
+    if (list.querySelector('div[style]')) list.innerHTML = '';
+
+    var div = document.createElement('div');
+    div.className = 'event';
+    div.innerHTML =
+      '<div class="dot ' + (event.alarm ? 'alarm' : 'ok') + '"></div>' +
+      '<div class="info"><strong>' + (event.alarm ? 'ALARM' : 'OK') + '</strong> — ' +
+      event.source + ' | Утаа: ' + event.smoke + ' | Батарей: ' + event.battery + '%</div>' +
+      '<div class="time">' + event.time + '</div>';
+    list.prepend(div);
+  }
+
+  function testAlarm() {
+    fetch('/api/test-alarm', { method: 'POST' });
+  }
+  function testOk() {
+    fetch('/api/test-ok', { method: 'POST' });
+  }
+
+  fetch('/api/status').then(function(r) { return r.json(); }).then(function(s) {
+    if (s.lastSeen) updateDashboard(s, null);
+  });
+  fetch('/api/history').then(function(r) { return r.json(); }).then(function(events) {
+    events.reverse().forEach(function(e) { addHistory(e); });
+  });
+</script>
+
+</body>
+</html>
