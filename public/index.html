@@ -1,252 +1,689 @@
 <!DOCTYPE html>
-<html lang="mn">
+<html class="dark" lang="mn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fire LoRa Dashboard</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Онцгой Байдлын Ерөнхий Хяналт</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#10131a",
+            "surface-dim": "#0b0e14",
+            "surface-container": "#1d2026",
+            "surface-container-low": "#191c22",
+            "surface-container-high": "#272a31",
+            "surface-variant": "#32353c",
+            "on-surface": "#e1e2eb",
+            "on-surface-variant": "#e7bdb7",
+            "primary": "#ffb4aa",
+            "primary-container": "#ff5545",
+            "on-primary-container": "#5c0002",
+            "secondary": "#53e16f",
+            "secondary-container": "#05b046",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "warning": "#f1c100",
+            "outline-variant": "#5d3f3b",
+            "ok": "#53e16f",
+            "alarm": "#ff5545",
+            "offline": "#6b7280",
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Space Grotesk"],
+          },
+        },
+      },
+    }
+  </script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f1923;
-      color: #e0e0e0;
-      min-height: 100vh;
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
-    .header {
-      background: linear-gradient(135deg, #1a2332, #243447);
-      padding: 20px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #2d4059;
+    .material-filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     }
-    .header h1 { font-size: 24px; color: #fff; }
-    .header .conn {
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
+    @keyframes pulse-red {
+      0% { background-color: rgba(147, 0, 10, 0.4); }
+      50% { background-color: rgba(255, 85, 69, 0.6); }
+      100% { background-color: rgba(147, 0, 10, 0.4); }
     }
-    .conn.online { background: #00c853; color: #000; }
-    .conn.offline { background: #ff5252; color: #fff; }
-
-    .main { padding: 24px; max-width: 1200px; margin: 0 auto; }
-
-    .status-banner {
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      margin-bottom: 24px;
-      transition: all 0.3s;
+    @keyframes radar-ping {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(3); opacity: 0; }
     }
-    .status-banner.ok {
-      background: linear-gradient(135deg, #1b5e20, #2e7d32);
-      border: 2px solid #4caf50;
-    }
-    .status-banner.alarm {
-      background: linear-gradient(135deg, #b71c1c, #d32f2f);
-      border: 2px solid #ff5252;
-      animation: pulse 1s infinite;
-    }
-    .status-banner.offline {
-      background: linear-gradient(135deg, #37474f, #455a64);
-      border: 2px solid #607d8b;
-    }
-    .status-banner h2 { font-size: 36px; margin-bottom: 8px; }
-    .status-banner p { font-size: 16px; opacity: 0.9; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .card {
-      background: #1a2332;
-      border: 1px solid #2d4059;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-    }
-    .card .label { font-size: 13px; color: #8899aa; margin-bottom: 8px; }
-    .card .value { font-size: 28px; font-weight: bold; }
-    .card .unit { font-size: 14px; color: #8899aa; }
-
-    .history {
-      background: #1a2332;
-      border: 1px solid #2d4059;
-      border-radius: 12px;
-      padding: 20px;
-    }
-    .history h3 { margin-bottom: 16px; color: #fff; }
-    .history-list { max-height: 400px; overflow-y: auto; }
-    .event {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
-      border-bottom: 1px solid #243447;
-      font-size: 14px;
-    }
-    .event:last-child { border-bottom: none; }
-    .event .dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-    .dot.alarm { background: #ff5252; }
-    .dot.ok { background: #4caf50; }
-    .event .info { flex: 1; }
-    .event .time { color: #8899aa; font-size: 12px; }
-
-    .test-btns {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .test-btns button {
-      padding: 10px 24px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .btn-alarm { background: #d32f2f; color: #fff; }
-    .btn-ok { background: #2e7d32; color: #fff; }
-    .btn-alarm:hover { background: #f44336; }
-    .btn-ok:hover { background: #43a047; }
+    .animate-pulse-red { animation: pulse-red 1.5s infinite; }
+    .animate-radar { animation: radar-ping 2s infinite; }
+    .smoke-bar { transition: width 0.5s ease; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #10131a; }
+    ::-webkit-scrollbar-thumb { background: #32353c; border-radius: 3px; }
   </style>
 </head>
-<body>
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen">
 
-<div class="header">
-  <h1>Fire LoRa Dashboard</h1>
-  <span class="conn offline" id="connStatus">OFFLINE</span>
+<!-- ==================== MAIN DASHBOARD ==================== -->
+<div id="dashboard" class="flex flex-col h-screen">
+
+  <!-- TOP BAR -->
+  <header class="flex h-14 shrink-0 items-center justify-between border-b border-surface-variant bg-surface-container px-4">
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-alarm/20">
+        <span class="material-symbols-outlined text-alarm material-filled">shield</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-bold uppercase tracking-wider">Онцгой Байдлын Ерөнхий Хяналт</h1>
+        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant/60">Fire Detection LoRa IoT System</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 rounded-md border border-surface-variant bg-surface-container-low px-4 py-1.5">
+      <span class="font-label text-xs text-on-surface-variant/60" id="currentDate"></span>
+      <span class="text-surface-variant">|</span>
+      <span class="font-label text-lg font-bold tabular-nums tracking-wider text-primary" id="currentTime"></span>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wider" id="connBadge">
+        <span class="material-symbols-outlined text-sm" id="connIcon">wifi_off</span>
+        <span id="connText">Офлайн</span>
+      </div>
+      <div class="flex items-center gap-1.5 rounded-md border border-surface-variant bg-surface-container-low px-2 py-1">
+        <span class="material-symbols-outlined text-sm text-primary">cell_tower</span>
+        <span class="font-label text-[10px] text-on-surface-variant/60">LoRa</span>
+        <div class="flex gap-0.5 items-end">
+          <div class="w-1 h-[7px] rounded-sm bg-ok"></div>
+          <div class="w-1 h-[10px] rounded-sm bg-ok"></div>
+          <div class="w-1 h-[13px] rounded-sm bg-ok"></div>
+          <div class="w-1 h-[16px] rounded-sm bg-surface-variant" id="signal4"></div>
+        </div>
+      </div>
+      <button onclick="testAlarm()" class="flex items-center gap-1.5 border border-alarm/50 text-alarm hover:bg-alarm/20 rounded-md px-3 py-1.5 text-xs font-semibold">
+        <span class="material-symbols-outlined text-sm">notifications_active</span>Тест
+      </button>
+      <button onclick="testOk()" class="flex items-center gap-1.5 border border-ok/50 text-ok hover:bg-ok/20 rounded-md px-3 py-1.5 text-xs font-semibold">
+        <span class="material-symbols-outlined text-sm">check_circle</span>OK
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="flex w-72 flex-col border-r border-surface-variant bg-surface-container-low">
+      <div class="border-b border-surface-variant p-3">
+        <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">Мэдрэгч төхөөрөмжүүд</h2>
+        <div class="grid grid-cols-4 gap-2">
+          <div class="flex flex-col items-center rounded-md bg-ok/10 p-2">
+            <span class="text-lg font-bold text-ok" id="statOk">0</span>
+            <span class="text-[9px] text-ok/70">Хэвийн</span>
+          </div>
+          <div class="flex flex-col items-center rounded-md bg-warning/10 p-2">
+            <span class="text-lg font-bold text-warning" id="statWarn">0</span>
+            <span class="text-[9px] text-warning/70">Анхаар</span>
+          </div>
+          <div class="flex flex-col items-center rounded-md bg-alarm/10 p-2">
+            <span class="text-lg font-bold text-alarm" id="statAlarm">0</span>
+            <span class="text-[9px] text-alarm/70">Аюултай</span>
+          </div>
+          <div class="flex flex-col items-center rounded-md bg-offline/10 p-2">
+            <span class="text-lg font-bold text-offline" id="statOff">1</span>
+            <span class="text-[9px] text-offline/70">Офлайн</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-2 space-y-1" id="nodeList">
+        <!-- Node cards rendered by JS -->
+      </div>
+    </aside>
+
+    <!-- CENTER MAP + BOTTOM TIMELINE -->
+    <div class="flex flex-1 flex-col overflow-hidden">
+
+      <!-- MAP AREA -->
+      <div class="relative flex-1 overflow-hidden bg-surface-container-low">
+        <div id="leafletMap" class="absolute inset-0 z-0"></div>
+        <!-- Route Info Box -->
+        <div id="routeInfo" class="absolute top-4 right-4 z-[40] hidden rounded-md border border-alarm bg-surface-dim/95 px-4 py-3 backdrop-blur-sm shadow-lg max-w-xs">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-alarm text-sm">directions_car</span>
+            <span class="text-xs font-bold text-alarm uppercase tracking-wider">Онцгой байдлын маршрут</span>
+          </div>
+          <div class="flex gap-4">
+            <div><p class="text-[10px] text-on-surface-variant/60">Зай</p><p class="font-mono text-sm font-bold" id="routeDistance">--</p></div>
+            <div><p class="text-[10px] text-on-surface-variant/60">Хугацаа</p><p class="font-mono text-sm font-bold text-alarm" id="routeTime">--</p></div>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div class="absolute bottom-4 left-4 z-[40] flex items-center gap-3 rounded-md border border-surface-variant bg-surface-container/90 px-3 py-2 backdrop-blur-sm">
+          <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded-full bg-ok"></div><span class="text-[10px] text-on-surface-variant/60">Хэвийн</span></div>
+          <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded-full bg-warning"></div><span class="text-[10px] text-on-surface-variant/60">Анхааруулга</span></div>
+          <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded-full bg-alarm"></div><span class="text-[10px] text-on-surface-variant/60">Аюултай</span></div>
+          <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded-full bg-offline"></div><span class="text-[10px] text-on-surface-variant/60">Офлайн</span></div>
+          <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded-full bg-blue-500"></div><span class="text-[10px] text-on-surface-variant/60">Онцгой байдал</span></div>
+        </div>
+      </div>
+
+      <!-- EVENT TIMELINE -->
+      <div class="flex h-40 flex-col border-t border-surface-variant bg-surface-container">
+        <div class="flex items-center justify-between border-b border-surface-variant px-4 py-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/60">filter_list</span>
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">Үйл явдлын түүх</h3>
+            <span class="rounded-full bg-surface-variant px-2 py-0.5 text-[10px] font-medium text-on-surface-variant/60" id="eventCount">0</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="filterEvents('all')" class="h-7 px-2 text-[10px] rounded bg-surface-variant text-on-surface" id="filterAll">Бүгд</button>
+            <button onclick="filterEvents('alarm')" class="h-7 px-2 text-[10px] rounded hover:bg-surface-variant text-on-surface-variant/60 flex items-center gap-1" id="filterAlarm"><div class="h-2 w-2 rounded-full bg-alarm"></div>Аюултай</button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-x-auto overflow-y-hidden">
+          <div class="flex gap-3 p-3 h-full" id="timelineList">
+            <div class="flex items-center justify-center text-sm text-on-surface-variant/40 min-w-full">Одоогоор мэдээлэл байхгүй</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <aside class="flex w-80 flex-col border-l border-surface-variant bg-surface-container">
+      <div class="border-b border-surface-variant p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">Төхөөрөмжийн мэдээлэл</h2>
+          <div class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase" id="nodeStatusBadge">Офлайн</div>
+        </div>
+        <div class="mt-3">
+          <h3 class="text-lg font-semibold" id="nodeName">fire-node-01</h3>
+          <p class="mt-0.5 font-mono text-xs text-on-surface-variant/60" id="nodeId">NODE-001</p>
+        </div>
+      </div>
+
+      <!-- Smoke Level -->
+      <div class="border-b border-surface-variant p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/60">local_fire_department</span>
+            <span class="text-xs font-medium text-on-surface-variant/60">Утааны түвшин</span>
+          </div>
+          <span class="font-mono text-2xl font-bold" id="smokeValue">0%</span>
+        </div>
+        <div class="mt-3 space-y-1">
+          <div class="relative h-6 overflow-hidden rounded-lg bg-surface-variant">
+            <div class="h-full smoke-bar bg-ok" id="smokeBar" style="width:0%"></div>
+            <div class="absolute inset-0 flex">
+              <div class="w-[40%] border-r border-dashed border-on-surface/20"></div>
+              <div class="w-[30%] border-r border-dashed border-on-surface/20"></div>
+            </div>
+          </div>
+          <div class="flex justify-between text-[9px] text-on-surface-variant/40">
+            <span>0%</span><span class="text-warning">40%</span><span class="text-alarm">70%</span><span>100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battery -->
+      <div class="border-b border-surface-variant p-4 space-y-4">
+        <div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm text-ok" id="battIcon">battery_full</span>
+              <span class="text-xs font-medium text-on-surface-variant/60">Батерей</span>
+            </div>
+            <span class="font-mono text-sm font-bold text-ok" id="battValue">0%</span>
+          </div>
+          <div class="mt-2 h-2 rounded-full bg-surface-variant overflow-hidden">
+            <div class="h-full bg-ok smoke-bar" id="battBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm text-primary">signal_cellular_alt</span>
+              <span class="text-xs font-medium text-on-surface-variant/60">Дохионы хүч</span>
+            </div>
+            <span class="font-mono text-sm font-bold text-primary" id="rssiValue">-- dBm</span>
+          </div>
+          <div class="mt-2 flex gap-1 items-end" id="signalBars">
+            <div class="flex-1 h-[8px] rounded-sm bg-surface-variant"></div>
+            <div class="flex-1 h-[12px] rounded-sm bg-surface-variant"></div>
+            <div class="flex-1 h-[16px] rounded-sm bg-surface-variant"></div>
+            <div class="flex-1 h-[20px] rounded-sm bg-surface-variant"></div>
+            <div class="flex-1 h-[24px] rounded-sm bg-surface-variant"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location & Last Update -->
+      <div class="p-4 space-y-3">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">location_on</span>
+          <span class="text-on-surface-variant/60">Байршил:</span>
+          <span class="font-mono" id="nodeLocation">47.9184°N, 106.9177°E</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">schedule</span>
+          <span class="text-on-surface-variant/60">Сүүлд шинэчлэгдсэн:</span>
+          <span id="lastUpdate">---</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">thermostat</span>
+          <span class="text-on-surface-variant/60">Температур:</span>
+          <span class="font-mono" id="tempValue">21°C</span>
+        </div>
+      </div>
+    </aside>
+  </div>
 </div>
 
-<div class="main">
-  <div class="status-banner offline" id="statusBanner">
-    <h2 id="statusText">Холбогдоогүй</h2>
-    <p id="statusSub">Төхөөрөмжөөс өгөгдөл хүлээж байна...</p>
-  </div>
+<!-- ==================== ALARM OVERLAY ==================== -->
+<div id="alarmOverlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4 overflow-y-auto">
+  <div class="absolute inset-0 animate-pulse-red bg-error-container/60 backdrop-blur-xl"></div>
+  <div class="relative z-10 w-full max-w-3xl bg-surface-dim border-l-8 border-primary-container shadow-[0_0_64px_rgba(255,85,69,0.3)] overflow-hidden max-h-[90vh] overflow-y-auto">
+    <!-- Top Bar -->
+    <div class="flex items-center justify-between bg-alarm px-6 py-4">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-3xl font-bold text-white material-filled">warning</span>
+        <h1 class="font-headline font-extrabold text-2xl tracking-tighter uppercase text-white">ГАЛЫН АЮУЛЫН СЭРЭМЖЛҮҮЛЭГ</h1>
+      </div>
+      <div class="font-label text-sm font-bold tracking-widest bg-white/20 px-3 py-1 text-white">PRIORITY 1 // CRITICAL</div>
+    </div>
+    <!-- Content -->
+    <div class="p-8 grid md:grid-cols-2 gap-12">
+      <div class="space-y-8">
+        <div class="space-y-2">
+          <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">БАЙРШИЛ / LOCATION</span>
+          <div class="bg-surface-container-high p-4 flex items-start gap-4">
+            <span class="material-symbols-outlined text-primary mt-1">location_on</span>
+            <div>
+              <p class="font-headline text-xl font-bold">ХАН-УУЛ ДҮҮРЭГ, 15-Р ХОРОО</p>
+              <p class="font-label text-sm text-on-surface-variant/60">S-402 // 47.9188° N, 106.9176° E</p>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">ТӨХӨӨРӨМЖ</span>
+            <div class="bg-surface-container-high p-4">
+              <p class="font-label text-lg font-bold" id="alarmDevice">fire-node-01</p>
+              <p class="font-label text-[10px] text-on-surface-variant/60 uppercase">LoRa Fire Node</p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">УТААНЫ ТҮВШИН</span>
+            <div class="bg-surface-container-high p-4 flex items-baseline gap-2">
+              <p class="font-headline text-2xl font-black text-primary" id="alarmSmoke">0</p>
+              <span class="material-symbols-outlined text-sm text-primary">trending_up</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col justify-between space-y-8">
+        <div class="space-y-6">
+          <div class="p-6 bg-alarm/10 border-l-2 border-alarm">
+            <h3 class="font-headline font-bold text-lg mb-4 text-primary">ЯАРАЛТАЙ ТҮГШҮҮР: ГАЛ ИЛРЭВ</h3>
+            <ul class="space-y-3 font-body text-sm text-on-surface-variant">
+              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span>Бүх агааржуулалтын системийг хаасан.</li>
+              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span>Төв удирдлагад дохиолол дамжуулсан.</li>
+              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">emergency</span>Яаралтай тусламжийн нэгжийг дуудсан.</li>
+            </ul>
+          </div>
+          <div class="flex items-center gap-4 p-4 border border-surface-variant/30">
+            <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary">timer</span>
+            </div>
+            <div>
+              <p class="font-label text-[10px] uppercase text-on-surface-variant/60 tracking-tighter">TIME SINCE DETECTION</p>
+              <p class="font-label text-lg font-bold" id="alarmTimer">00:00:00</p>
+            </div>
+          </div>
+        </div>
+        <!-- ЯАРАЛТАЙ ХОЛБОО БАРИХ -->
+        <div class="p-4 bg-surface-container rounded border border-surface-variant">
+          <h4 class="font-label text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">contact_phone</span>ЯАРАЛТАЙ ХОЛБОО БАРИХ
+          </h4>
+          <div class="space-y-2" id="contactList">
+            <a href="tel:+97699112233" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-alarm/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-alarm">local_fire_department</span></div>
+                <div><p class="text-xs font-semibold">Онцгой байдал 101</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 101</p></div>
+              </div>
+              <div class="flex items-center gap-1 bg-alarm/20 text-alarm px-3 py-1.5 rounded-full group-hover:bg-alarm group-hover:text-white transition-all">
+                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+              </div>
+            </a>
+            <a href="tel:+97699001122" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">person</span></div>
+                <div><p class="text-xs font-semibold">Барилгын эзэн</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9900-1122</p></div>
+              </div>
+              <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+              </div>
+            </a>
+            <a href="tel:+97699334455" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">security</span></div>
+                <div><p class="text-xs font-semibold">Хамгаалалтын ажилтан</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9933-4455</p></div>
+              </div>
+              <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
+                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+              </div>
+            </a>
+            <a href="tel:+97699556677" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-ok/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-ok">engineering</span></div>
+                <div><p class="text-xs font-semibold">Инженер / Техникч</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9955-6677</p></div>
+              </div>
+              <div class="flex items-center gap-1 bg-ok/20 text-ok px-3 py-1.5 rounded-full group-hover:bg-ok group-hover:text-white transition-all">
+                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+              </div>
+            </a>
+            <a href="tel:+97699778899" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-ok/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-ok">supervisor_account</span></div>
+                <div><p class="text-xs font-semibold">Менежер / Удирдлага</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9977-8899</p></div>
+              </div>
+              <div class="flex items-center gap-1 bg-ok/20 text-ok px-3 py-1.5 rounded-full group-hover:bg-ok group-hover:text-white transition-all">
+                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+              </div>
+            </a>
+          </div>
+        </div>
 
-  <div class="cards">
-    <div class="card">
-      <div class="label">Төхөөрөмж</div>
-      <div class="value" id="deviceId">---</div>
-    </div>
-    <div class="card">
-      <div class="label">Утааны түвшин</div>
-      <div class="value" id="smoke">0</div>
-    </div>
-    <div class="card">
-      <div class="label">Батарей</div>
-      <div class="value"><span id="battery">0</span><span class="unit">%</span></div>
-    </div>
-    <div class="card">
-      <div class="label">Нийт дохио</div>
-      <div class="value" id="totalAlarms">0</div>
-    </div>
-    <div class="card">
-      <div class="label">Сүүлд холбогдсон</div>
-      <div class="value" style="font-size:16px" id="lastSeen">---</div>
-    </div>
-  </div>
-
-  <div class="test-btns">
-    <button class="btn-alarm" onclick="testAlarm()">ALARM TEST</button>
-    <button class="btn-ok" onclick="testOk()">OK TEST</button>
-  </div>
-
-  <div class="history">
-    <h3>Түүх</h3>
-    <div class="history-list" id="historyList">
-      <div class="event">
-        <div style="color:#8899aa">Одоогоор мэдээлэл байхгүй</div>
+        <button onclick="acknowledgeAlarm()" class="group relative w-full overflow-hidden bg-alarm py-6 transition-all hover:scale-[1.01] active:scale-95 duration-100 shadow-[0_12px_24px_rgba(255,85,69,0.3)] mt-4">
+          <div class="relative z-10 flex items-center justify-center gap-4 text-white">
+            <span class="material-symbols-outlined font-bold text-2xl">verified_user</span>
+            <span class="font-headline font-extrabold text-xl tracking-tight uppercase">ХҮЛЭЭН ЗӨВШӨӨРӨХ</span>
+          </div>
+        </button>
+        <p class="text-center font-label text-[10px] text-on-surface-variant/40 uppercase tracking-widest">БҮХ ҮЙЛДЭЛ СИСТЕМД БҮРТГЭГДЭЖ БАЙНА</p>
       </div>
     </div>
   </div>
+  <div class="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-alarm px-4 py-2 z-20">
+    <div class="h-3 w-3 animate-ping rounded-full bg-white"></div>
+    <span class="text-sm font-bold uppercase text-white">Яаралтай</span>
+  </div>
+  <div class="absolute right-4 top-4 flex items-center gap-2 rounded-lg bg-alarm px-4 py-2 z-20">
+    <span class="text-sm font-bold uppercase text-white">Emergency</span>
+    <div class="h-3 w-3 animate-ping rounded-full bg-white"></div>
+  </div>
 </div>
 
+<!-- ==================== AUDIO ==================== -->
+<audio id="alarmSound" loop preload="auto">
+  <source src="data:audio/wav;base64,UklGRl9vT19teleQ=" type="audio/wav"/>
+</audio>
+
 <script>
-  const ws = new WebSocket('ws://' + location.host);
+// ===== MAP SETUP =====
+const FIRE_NODE_POS = [47.9184, 106.9177]; // fire-node-01 байршил
+const EMERGENCY_HQ = [47.9130, 106.9060]; // Онцгой байдлын газар (ХУД)
 
-  ws.onopen = function() {
-    document.getElementById('connStatus').textContent = 'CONNECTED';
-    document.getElementById('connStatus').className = 'conn online';
-  };
+const map = L.map('leafletMap', { zoomControl: false }).setView([47.9160, 106.9120], 14);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+}).addTo(map);
 
-  ws.onclose = function() {
-    document.getElementById('connStatus').textContent = 'OFFLINE';
-    document.getElementById('connStatus').className = 'conn offline';
-  };
+// Custom icons
+const fireIconOk = L.divIcon({ className: '', html: '<div style="width:28px;height:28px;background:#53e16f;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#fff;box-shadow:0 0 10px #53e16f88">OK</div>', iconSize: [28,28], iconAnchor: [14,14] });
+const fireIconAlarm = L.divIcon({ className: '', html: '<div style="width:32px;height:32px;background:#ff5545;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;color:#fff;box-shadow:0 0 20px #ff554588;animation:pulse 1s infinite">🔥</div>', iconSize: [32,32], iconAnchor: [16,16] });
+const fireIconOffline = L.divIcon({ className: '', html: '<div style="width:28px;height:28px;background:#6b7280;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#fff;box-shadow:0 0 6px #6b728088">--</div>', iconSize: [28,28], iconAnchor: [14,14] });
+const emergencyIcon = L.divIcon({ className: '', html: '<div style="width:36px;height:36px;background:#3b82f6;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 12px #3b82f688">🚒</div>', iconSize: [36,36], iconAnchor: [18,18] });
 
-  ws.onmessage = function(msg) {
-    var data = JSON.parse(msg.data);
+const fireMarker = L.marker(FIRE_NODE_POS, { icon: fireIconOffline }).addTo(map).bindPopup('<b>fire-node-01</b><br>Галын мэдрэгч');
+const hqMarker = L.marker(EMERGENCY_HQ, { icon: emergencyIcon }).addTo(map).bindPopup('<b>Онцгой Байдлын Газар</b><br>ХУД, Улаанбаатар');
+
+let routeLine = null;
+let pulseCircle = null;
+
+function updateMapMarker(status) {
+  if (status.alarm) {
+    fireMarker.setIcon(fireIconAlarm);
+    if (!pulseCircle) {
+      pulseCircle = L.circle(FIRE_NODE_POS, { radius: 200, color: '#ff5545', fillColor: '#ff5545', fillOpacity: 0.15, weight: 2 }).addTo(map);
+    }
+  } else if (status.status === 'online') {
+    fireMarker.setIcon(fireIconOk);
+    if (pulseCircle) { map.removeLayer(pulseCircle); pulseCircle = null; }
+  } else {
+    fireMarker.setIcon(fireIconOffline);
+    if (pulseCircle) { map.removeLayer(pulseCircle); pulseCircle = null; }
+  }
+}
+
+async function showRoute() {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${EMERGENCY_HQ[1]},${EMERGENCY_HQ[0]};${FIRE_NODE_POS[1]},${FIRE_NODE_POS[0]}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.polyline(coords, { color: '#ff5545', weight: 5, opacity: 0.8, dashArray: '10 6' }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+      // Route info
+      const distKm = (route.distance / 1000).toFixed(1);
+      const timeMin = Math.ceil(route.duration / 60);
+      document.getElementById('routeDistance').textContent = distKm + ' км';
+      document.getElementById('routeTime').textContent = timeMin + ' мин';
+      document.getElementById('routeInfo').className = document.getElementById('routeInfo').className.replace('hidden', '');
+    }
+  } catch (e) { console.error('Route error:', e); }
+}
+
+function hideRoute() {
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  document.getElementById('routeInfo').className = document.getElementById('routeInfo').className.replace(/\bhidden\b/, '') + ' hidden';
+  map.setView([47.9160, 106.9120], 14);
+}
+
+// ===== STATE =====
+let lastStatus = { alarm: false, smoke: 0, battery: 0, status: 'offline', lastSeen: null, totalAlarms: 0, deviceId: 'fire-node-01', source: 'N/A' };
+let events = [];
+let alarmActive = false;
+let alarmStartTime = null;
+let alarmTimerInterval = null;
+let currentFilter = 'all';
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('currentDate').textContent = now.toLocaleDateString('mn-MN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  document.getElementById('currentTime').textContent = now.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== WEBSOCKET =====
+let ws;
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(proto + '//' + location.host);
+  ws.onopen = () => setOnline(true);
+  ws.onclose = () => { setOnline(false); setTimeout(connectWS, 3000); };
+  ws.onmessage = (msg) => {
+    const data = JSON.parse(msg.data);
     if (data.type === 'update') {
-      updateDashboard(data.status, data.event);
+      lastStatus = { ...lastStatus, ...data.status };
+      if (data.event) events.unshift(data.event);
+      updateUI();
+      if (data.status.alarm && !alarmActive) showAlarm(data.event || data.status);
+      if (!data.status.alarm) hideRoute();
     }
   };
+}
+connectWS();
 
-  function updateDashboard(status, event) {
-    var banner = document.getElementById('statusBanner');
-    var text = document.getElementById('statusText');
-    var sub = document.getElementById('statusSub');
-
-    if (status.alarm) {
-      banner.className = 'status-banner alarm';
-      text.textContent = 'ГАЛЫН АЮУЛ!';
-      sub.textContent = 'Эх үүсвэр: ' + status.source;
-    } else {
-      banner.className = 'status-banner ok';
-      text.textContent = 'Хэвийн';
-      sub.textContent = 'Бүх систем хэвийн ажиллаж байна';
-    }
-
-    document.getElementById('deviceId').textContent = status.deviceId;
-    document.getElementById('smoke').textContent = status.smoke;
-    document.getElementById('battery').textContent = status.battery;
-    document.getElementById('totalAlarms').textContent = status.totalAlarms;
-    document.getElementById('lastSeen').textContent = status.lastSeen || '---';
-
-    if (event) addHistory(event);
+// ===== CONNECTION STATUS =====
+function setOnline(online) {
+  const badge = document.getElementById('connBadge');
+  const icon = document.getElementById('connIcon');
+  const text = document.getElementById('connText');
+  if (online) {
+    badge.className = 'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wider bg-ok/20 text-ok';
+    icon.textContent = 'wifi'; text.textContent = 'Онлайн';
+  } else {
+    badge.className = 'flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wider bg-alarm/20 text-alarm';
+    icon.textContent = 'wifi_off'; text.textContent = 'Офлайн';
   }
+}
 
-  function addHistory(event) {
-    var list = document.getElementById('historyList');
-    if (list.querySelector('div[style]')) list.innerHTML = '';
+// ===== UPDATE UI =====
+function updateUI() {
+  const s = lastStatus;
+  // Node sidebar
+  updateNodeList();
+  // Stats
+  document.getElementById('statOk').textContent = s.alarm ? '0' : (s.status === 'online' ? '1' : '0');
+  document.getElementById('statAlarm').textContent = s.alarm ? '1' : '0';
+  document.getElementById('statOff').textContent = s.status === 'offline' ? '1' : '0';
+  // Map marker
+  updateMapMarker(s);
+  // Right panel
+  updateRightPanel();
+  // Timeline
+  updateTimeline();
+}
 
-    var div = document.createElement('div');
-    div.className = 'event';
-    div.innerHTML =
-      '<div class="dot ' + (event.alarm ? 'alarm' : 'ok') + '"></div>' +
-      '<div class="info"><strong>' + (event.alarm ? 'ALARM' : 'OK') + '</strong> — ' +
-      event.source + ' | Утаа: ' + event.smoke + ' | Батарей: ' + event.battery + '%</div>' +
-      '<div class="time">' + event.time + '</div>';
-    list.prepend(div);
+function updateNodeList() {
+  const s = lastStatus;
+  const statusClass = s.alarm ? 'border-alarm bg-alarm/10' : (s.status === 'online' ? 'border-transparent hover:border-surface-variant hover:bg-surface-container' : 'border-transparent opacity-50');
+  const statusIcon = s.alarm ? 'local_fire_department' : (s.status === 'online' ? 'check_circle' : 'wifi_off');
+  const statusColor = s.alarm ? 'text-alarm' : (s.status === 'online' ? 'text-ok' : 'text-offline');
+  const statusBg = s.alarm ? 'bg-alarm/20' : (s.status === 'online' ? 'bg-ok/20' : 'bg-offline/20');
+  const smokeColor = s.smoke > 70 ? 'bg-alarm' : (s.smoke > 40 ? 'bg-warning' : 'bg-ok');
+
+  document.getElementById('nodeList').innerHTML = `
+    <button class="flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-all ${statusClass}">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-2">
+          <div class="rounded-md p-1.5 ${statusBg}"><span class="material-symbols-outlined h-4 w-4 ${statusColor} text-base">${statusIcon}</span></div>
+          <div><p class="text-xs font-medium">${s.deviceId || 'fire-node-01'}</p><p class="font-mono text-[10px] text-on-surface-variant/60">NODE-001</p></div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-xs text-on-surface-variant/40">local_fire_department</span>
+          <div class="h-1.5 w-16 overflow-hidden rounded-full bg-surface-variant"><div class="h-full ${smokeColor} smoke-bar" style="width:${Math.min(s.smoke, 100)}%"></div></div>
+          <span class="font-mono text-[10px] text-on-surface-variant/60">${s.smoke}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-0.5">
+            <span class="material-symbols-outlined text-xs ${s.battery > 50 ? 'text-ok' : (s.battery > 20 ? 'text-warning' : 'text-alarm')}">battery_full</span>
+            <span class="font-mono text-[9px] text-on-surface-variant/60">${s.battery}%</span>
+          </div>
+        </div>
+      </div>
+    </button>`;
+}
+
+function updateRightPanel() {
+  const s = lastStatus;
+  // Status badge
+  const badge = document.getElementById('nodeStatusBadge');
+  if (s.alarm) { badge.textContent = 'Аюултай!'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-alarm/20 text-alarm animate-pulse'; }
+  else if (s.status === 'online') { badge.textContent = 'Хэвийн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-ok/20 text-ok'; }
+  else { badge.textContent = 'Офлайн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-offline/20 text-offline'; }
+  // Smoke
+  const smokeColor = s.smoke > 70 ? 'text-alarm' : (s.smoke > 40 ? 'text-warning' : 'text-ok');
+  const smokeBarColor = s.smoke > 70 ? 'bg-alarm' : (s.smoke > 40 ? 'bg-warning' : 'bg-ok');
+  document.getElementById('smokeValue').textContent = s.smoke + '%';
+  document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold ' + smokeColor;
+  document.getElementById('smokeBar').style.width = Math.min(s.smoke, 100) + '%';
+  document.getElementById('smokeBar').className = 'h-full smoke-bar ' + smokeBarColor;
+  // Battery
+  const battColor = s.battery > 50 ? 'text-ok' : (s.battery > 20 ? 'text-warning' : 'text-alarm');
+  const battBarColor = s.battery > 50 ? 'bg-ok' : (s.battery > 20 ? 'bg-warning' : 'bg-alarm');
+  document.getElementById('battValue').textContent = s.battery + '%';
+  document.getElementById('battValue').className = 'font-mono text-sm font-bold ' + battColor;
+  document.getElementById('battBar').style.width = s.battery + '%';
+  document.getElementById('battBar').className = 'h-full smoke-bar ' + battBarColor;
+  // Last update
+  document.getElementById('lastUpdate').textContent = s.lastSeen || '---';
+}
+
+function updateTimeline() {
+  const filtered = currentFilter === 'all' ? events : events.filter(e => e.alarm);
+  document.getElementById('eventCount').textContent = filtered.length;
+  if (filtered.length === 0) {
+    document.getElementById('timelineList').innerHTML = '<div class="flex items-center justify-center text-sm text-on-surface-variant/40 min-w-full">Одоогоор мэдээлэл байхгүй</div>';
+    return;
   }
+  document.getElementById('timelineList').innerHTML = filtered.map(e => {
+    const isAlarm = e.alarm;
+    const borderColor = isAlarm ? 'border-alarm/50' : 'border-ok/30';
+    const bgColor = isAlarm ? 'bg-alarm/10' : 'bg-ok/10';
+    const icon = isAlarm ? 'local_fire_department' : 'check_circle';
+    const iconColor = isAlarm ? 'text-alarm' : 'text-ok';
+    return `<div class="flex min-w-[280px] flex-col gap-2 rounded-lg border p-3 ${borderColor} ${bgColor} shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="flex h-7 w-7 items-center justify-center rounded-md ${bgColor}"><span class="material-symbols-outlined text-base ${iconColor}">${icon}</span></div>
+        <div><p class="text-xs font-medium">${isAlarm ? 'ALARM' : 'OK'} — ${e.source}</p><p class="font-mono text-[10px] text-on-surface-variant/60">${e.deviceId}</p></div>
+      </div>
+      <p class="text-xs">Утаа: ${e.smoke} | Батарей: ${e.battery}%</p>
+      <div class="text-[10px] text-on-surface-variant/40 font-mono">${e.time}</div>
+    </div>`;
+  }).join('');
+}
 
-  function testAlarm() {
-    fetch('/api/test-alarm', { method: 'POST' });
-  }
-  function testOk() {
-    fetch('/api/test-ok', { method: 'POST' });
-  }
+// ===== ALARM OVERLAY =====
+function showAlarm(event) {
+  alarmActive = true;
+  alarmStartTime = Date.now();
+  document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+  document.getElementById('alarmDevice').textContent = event.deviceId || 'fire-node-01';
+  document.getElementById('alarmSmoke').textContent = event.smoke || lastStatus.smoke;
+  alarmTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - alarmStartTime) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const sec = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('alarmTimer').textContent = h + ':' + m + ':' + sec;
+  }, 1000);
+  showRoute();
+}
 
-  fetch('/api/status').then(function(r) { return r.json(); }).then(function(s) {
-    if (s.lastSeen) updateDashboard(s, null);
-  });
-  fetch('/api/history').then(function(r) { return r.json(); }).then(function(events) {
-    events.reverse().forEach(function(e) { addHistory(e); });
-  });
+function acknowledgeAlarm() {
+  alarmActive = false;
+  clearInterval(alarmTimerInterval);
+  document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 hidden items-center justify-center p-4';
+  // Route map дээр үлдэнэ — alarm хаагдсан ч маршрут харагдсаар байна
+}
+
+// ===== FILTERS =====
+function filterEvents(type) {
+  currentFilter = type;
+  document.getElementById('filterAll').className = type === 'all'
+    ? 'h-7 px-2 text-[10px] rounded bg-surface-variant text-on-surface'
+    : 'h-7 px-2 text-[10px] rounded hover:bg-surface-variant text-on-surface-variant/60';
+  document.getElementById('filterAlarm').className = type === 'alarm'
+    ? 'h-7 px-2 text-[10px] rounded bg-surface-variant text-on-surface flex items-center gap-1'
+    : 'h-7 px-2 text-[10px] rounded hover:bg-surface-variant text-on-surface-variant/60 flex items-center gap-1';
+  updateTimeline();
+}
+
+// ===== TEST =====
+function testAlarm() { fetch('/api/test-alarm', { method: 'POST' }); }
+function testOk() { fetch('/api/test-ok', { method: 'POST' }); }
+
+// ===== INITIAL LOAD =====
+fetch('/api/status').then(r => r.json()).then(s => {
+  if (s.lastSeen) { lastStatus = { ...lastStatus, ...s }; updateUI(); }
+});
+fetch('/api/history').then(r => r.json()).then(h => {
+  events = h; updateTimeline();
+});
 </script>
-
 </body>
 </html>
