@@ -356,6 +356,33 @@ app.get('/api/status', (req, res) => res.json(devices));
 app.get('/api/history', (req, res) => res.json(history));
 app.get('/api/devices', (req, res) => res.json(devices));
 
+// Байршил засах API
+app.put('/api/device/:id/location', (req, res) => {
+  const deviceId = req.params.id;
+  const { building, floor, district, street, lat, lng } = req.body;
+  const device = getOrCreateDevice(deviceId);
+  device.location = {
+    building: building || device.location.building,
+    floor: floor || device.location.floor,
+    district: district || device.location.district,
+    street: street || device.location.street,
+    lat: lat !== undefined ? parseFloat(lat) : device.location.lat,
+    lng: lng !== undefined ? parseFloat(lng) : device.location.lng
+  };
+  // DEVICE_LOCATIONS-г бас шинэчлэх (RAM дотор)
+  DEVICE_LOCATIONS[deviceId] = { ...device.location };
+  broadcast({ type: 'update', device, devices });
+  console.log(`[Location updated] ${deviceId}:`, device.location);
+  res.json({ ok: true, location: device.location });
+});
+
+// Байршлын тохиргоо авах
+app.get('/api/device/:id/location', (req, res) => {
+  const deviceId = req.params.id;
+  const loc = DEVICE_LOCATIONS[deviceId] || DEFAULT_LOCATION;
+  res.json(loc);
+});
+
 app.post('/api/test-alarm', (req, res) => {
   const now = new Date().toLocaleString('mn-MN', { timeZone: 'Asia/Ulaanbaatar' });
   const event = {
