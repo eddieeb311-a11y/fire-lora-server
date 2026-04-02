@@ -11,47 +11,140 @@ const wss = new WebSocket.Server({ server });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 // ===== ТОХИРГОО =====
 const PORT = process.env.PORT || 3000;
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || 'YOUR_BOT_TOKEN';
 const CHAT_ID = process.env.CHAT_ID || 'YOUR_CHAT_ID';
 
-// ===== Бүртгэлтэй хэрэглэгчид (alarm мэдэгдэл хүлээн авах) =====
+// ===== Бүртгэлтэй хэрэглэгчид =====
 let registeredUsers = {};
-// Admin chat ID-г автоматаар нэмэх
 if (CHAT_ID && CHAT_ID !== 'YOUR_CHAT_ID') {
   registeredUsers[CHAT_ID] = { name: 'Admin', registered: new Date().toISOString() };
 }
 
+// ===== Төхөөрөмжийн байршлын тохиргоо =====
+// Шинэ device нэмэхдээ энд бүртгэнэ
+const DEVICE_LOCATIONS = {
+  'fire-node-01': {
+    building: 'ШУТИС, Мэдээлэл технологийн сургууль',
+    floor: '1-р давхар, Лаборатори 101',
+    district: 'Баянгол дүүрэг, 8-р хороо',
+    street: 'Бага тойруу-14, Улаанбаатар',
+    lat: 47.9184,
+    lng: 106.9177
+  },
+  'fire-node-02': {
+    building: 'ШУТИС, Мэдээлэл технологийн сургууль',
+    floor: '2-р давхар, Серверийн өрөө 205',
+    district: 'Баянгол дүүрэг, 8-р хороо',
+    street: 'Бага тойруу-14, Улаанбаатар',
+    lat: 47.9185,
+    lng: 106.9178
+  },
+  'fire-node-03': {
+    building: 'ШУТИС, Мэдээлэл технологийн сургууль',
+    floor: '3-р давхар, Лекцийн танхим 302',
+    district: 'Баянгол дүүрэг, 8-р хороо',
+    street: 'Бага тойруу-14, Улаанбаатар',
+    lat: 47.9186,
+    lng: 106.9179
+  },
+  'fire-node-04': {
+    building: 'ШУТИС, Мэдээлэл технологийн сургууль',
+    floor: '2-р давхар, 204 тоот',
+    district: 'Баянгол дүүрэг, 8-р хороо',
+    street: 'Бага тойруу-14, Улаанбаатар',
+    lat: 47.9184,
+    lng: 106.9177
+  }
+};
+
+// Шинэ device-д default байршил
+const DEFAULT_LOCATION = {
+  building: 'Тодорхойгүй барилга',
+  floor: 'Тодорхойгүй давхар',
+  district: 'Тодорхойгүй дүүрэг',
+  street: 'Тодорхойгүй хаяг',
+  lat: 47.9184,
+  lng: 106.9177
+};
+
 // ===== Өгөгдөл хадгалах =====
 let history = [];
-let lastStatus = {
-  deviceId: 'fire-node-01',
-  alarm: false,
-  source: 'N/A',
-  smoke: 0,
-  battery: 100,
-  lastSeen: null,
-  totalAlarms: 0,
-  status: 'offline'
-};
+let devices = {};
+
+function getOrCreateDevice(deviceId) {
+  if (!devices[deviceId]) {
+    const loc = DEVICE_LOCATIONS[deviceId] || DEFAULT_LOCATION;
+    devices[deviceId] = {
+      deviceId: deviceId,
+      alarm: false,
+      source: 'N/A',
+      smoke: 0,
+      battery: 100,
+      lastSeen: null,
+      totalAlarms: 0,
+      status: 'offline',
+      rssi: 0,
+      snr: 0,
+      sf: 0,
+      dataRate: '',
+      payloadBytes: 0,
+      devAddr: '',
+      fPort: 0,
+      fCnt: 0,
+      uptime: 0,
+      frequency: 0,
+      bandwidth: 0,
+      gatewayId: '',
+      gatewayEui: '',
+      // Байршлын мэдээлэл
+      location: {
+        building: loc.building,
+        floor: loc.floor,
+        district: loc.district,
+        street: loc.street,
+        lat: loc.lat,
+        lng: loc.lng
+      }
+    };
+  }
+  return devices[deviceId];
+}
 
 // ===== WebSocket =====
 function broadcast(data) {
+  const msg = JSON.stringify(data);
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+      client.send(msg);
     }
   });
 }
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected');
+  // Шинэ холболтонд одоогийн бүх devices мэдээлэл илгээх
+  ws.send(JSON.stringify({ type: 'init', devices: devices, history: history.slice(0, 50) }));
+});
 
 // ===== TTN Webhook =====
 app.post('/ttn-webhook', async (req, res) => {
   try {
     const payload = req.body;
     const decoded = payload.uplink_message?.decoded_payload;
+    const uplinkMsg = payload.uplink_message;
 
-    if (!decoded) {
+    if (!decoded && !uplinkMsg) {
       res.status(200).send('No payload');
       return;
     }
@@ -60,35 +153,79 @@ app.post('/ttn-webhook', async (req, res) => {
       timeZone: 'Asia/Ulaanbaatar'
     });
 
+    const deviceId = payload.end_device_ids?.device_id || 'unknown';
+    const devAddr = payload.end_device_ids?.dev_addr || '';
+    const rxMeta = uplinkMsg?.rx_metadata?.[0] || {};
+    const settings = uplinkMsg?.settings || {};
+
+    // Data rate parsing (e.g., "SF7BW125" -> sf=7, bw=125)
+    const dataRateStr = settings?.data_rate?.lora
+      ? `SF${settings.data_rate.lora.spreading_factor}BW${settings.data_rate.lora.bandwidth / 1000}`
+      : (uplinkMsg?.settings?.data_rate_index !== undefined ? `DR${uplinkMsg.settings.data_rate_index}` : '');
+    const sf = settings?.data_rate?.lora?.spreading_factor || 0;
+    const bandwidth = settings?.data_rate?.lora?.bandwidth || 0;
+    const frequency = settings?.frequency ? (parseInt(settings.frequency) / 1000000).toFixed(1) : '868.0';
+
+    // Payload хэмжээ
+    const frmPayload = uplinkMsg?.frm_payload || '';
+    const payloadBytes = frmPayload ? Math.ceil(frmPayload.length * 3 / 4) : 0;
+
     const event = {
-      deviceId: payload.end_device_ids?.device_id || 'fire-node-01',
-      alarm: decoded.alarm || false,
-      source: decoded.source || 'N/A',
-      smoke: decoded.smoke || 0,
-      battery: decoded.battery || 0,
+      deviceId: deviceId,
+      alarm: decoded?.alarm || false,
+      source: decoded?.source || 'heartbeat',
+      smoke: decoded?.smoke || 0,
+      battery: decoded?.battery || 0,
+      uptime: decoded?.uptime || 0,
       time: now,
-      rssi: payload.uplink_message?.rx_metadata?.[0]?.rssi || 0,
-      snr: payload.uplink_message?.rx_metadata?.[0]?.snr || 0
+      timestamp: new Date().toISOString(),
+      rssi: rxMeta.rssi || 0,
+      snr: rxMeta.snr || 0,
+      sf: sf,
+      dataRate: dataRateStr,
+      payloadBytes: payloadBytes,
+      devAddr: devAddr,
+      fPort: uplinkMsg?.f_port || 0,
+      fCnt: uplinkMsg?.f_cnt || 0,
+      frequency: frequency,
+      bandwidth: bandwidth,
+      gatewayId: rxMeta.gateway_ids?.gateway_id || '',
+      gatewayEui: rxMeta.gateway_ids?.eui || ''
     };
 
-    lastStatus.alarm = event.alarm;
-    lastStatus.source = event.source;
-    lastStatus.smoke = event.smoke;
-    lastStatus.battery = event.battery;
-    lastStatus.lastSeen = now;
-    lastStatus.status = 'online';
-    if (event.alarm) lastStatus.totalAlarms++;
+    // Device state шинэчлэх
+    const device = getOrCreateDevice(deviceId);
+    device.alarm = event.alarm;
+    device.source = event.source;
+    device.smoke = event.smoke;
+    device.battery = event.battery;
+    device.lastSeen = now;
+    device.status = 'online';
+    device.rssi = event.rssi;
+    device.snr = event.snr;
+    device.sf = event.sf;
+    device.dataRate = event.dataRate;
+    device.payloadBytes = event.payloadBytes;
+    device.devAddr = event.devAddr;
+    device.fPort = event.fPort;
+    device.fCnt = event.fCnt;
+    device.uptime = event.uptime;
+    device.frequency = event.frequency;
+    device.bandwidth = event.bandwidth;
+    device.gatewayId = event.gatewayId;
+    device.gatewayEui = event.gatewayEui;
+    if (event.alarm) device.totalAlarms++;
 
     history.unshift(event);
     if (history.length > 100) history.pop();
 
-    broadcast({ type: 'update', status: lastStatus, event: event });
+    broadcast({ type: 'update', device: device, event: event, devices: devices });
 
     if (event.alarm) {
       await sendTelegram(event);
     }
 
-    console.log(`[${now}] ${event.alarm ? 'ALARM!' : 'OK'} smoke=${event.smoke} bat=${event.battery}%`);
+    console.log(`[${now}] ${deviceId} | ${event.alarm ? 'ALARM!' : 'OK'} | smoke=${event.smoke} bat=${event.battery}% | RSSI=${event.rssi} SNR=${event.snr} ${event.dataRate} | ${event.payloadBytes}B`);
     res.status(200).send('OK');
   } catch (err) {
     console.error('Webhook error:', err);
@@ -118,11 +255,11 @@ async function sendTelegram(event) {
     `⚠️ Эх үүсвэр: ${event.source}\n` +
     `💨 Утаа: ${event.smoke}\n` +
     `🔋 Батарей: ${event.battery}%\n` +
-    `📶 RSSI: ${event.rssi} dBm\n` +
+    `📶 RSSI: ${event.rssi} dBm | SNR: ${event.snr}\n` +
+    `📡 ${event.dataRate} | ${event.frequency} MHz\n` +
     `🕐 Цаг: ${event.time}\n\n` +
     `❗ ЯАРАЛТАЙ АРГА ХЭМЖЭЭ АВНА УУ!`;
 
-  // Бүх бүртгэлтэй хэрэглэгчид рүү илгээх
   const chatIds = Object.keys(registeredUsers);
   if (chatIds.length === 0 && CHAT_ID && CHAT_ID !== 'YOUR_CHAT_ID') {
     chatIds.push(CHAT_ID);
@@ -153,119 +290,84 @@ async function pollTelegram() {
       const firstName = msg.chat.first_name || 'Хэрэглэгч';
 
       if (text === '/start') {
-        const welcome =
+        await sendTelegramTo(chatId,
           `🛡 *Онцгой Байдлын Хяналтын Систем*\n\n` +
           `Сайн байна уу, ${firstName}!\n\n` +
-          `📋 *Команд жагсаалт:*\n` +
-          `/status — Одоогийн статус харах\n` +
-          `/register — Alarm мэдэгдэл хүлээн авах бүртгүүлэх\n` +
+          `📋 *Команд:*\n` +
+          `/status — Статус\n` +
+          `/register — Бүртгүүлэх\n` +
           `/unregister — Бүртгэлээс гарах\n` +
-          `/test — Тест alarm илгээх\n` +
-          `/help — Тусламж\n\n` +
-          `🔥 Галын дохио ирэхэд бүртгэлтэй хэрэглэгчид рүү автоматаар мэдэгдэл очно.`;
-        await sendTelegramTo(chatId, welcome);
+          `/test — Тест alarm\n` +
+          `/help — Тусламж`);
       }
-
       else if (text === '/status') {
-        const s = lastStatus;
-        const statusEmoji = s.alarm ? '🔴 ALARM' : (s.status === 'online' ? '🟢 Хэвийн' : '⚫ Офлайн');
-        const statusMsg =
-          `📊 *Системийн Статус*\n\n` +
-          `${statusEmoji}\n` +
-          `📍 Төхөөрөмж: ${s.deviceId}\n` +
-          `💨 Утааны түвшин: ${s.smoke}\n` +
-          `🔋 Батарей: ${s.battery}%\n` +
-          `🔔 Нийт дохио: ${s.totalAlarms}\n` +
-          `🕐 Сүүлд: ${s.lastSeen || 'Мэдээлэл байхгүй'}\n\n` +
-          `👥 Бүртгэлтэй: ${Object.keys(registeredUsers).length} хэрэглэгч`;
+        const deviceList = Object.values(devices);
+        let statusMsg = `📊 *Системийн Статус*\n\n`;
+        if (deviceList.length === 0) {
+          statusMsg += `⚫ Төхөөрөмж байхгүй`;
+        } else {
+          for (const d of deviceList) {
+            const emoji = d.alarm ? '🔴' : (d.status === 'online' ? '🟢' : '⚫');
+            statusMsg += `${emoji} *${d.deviceId}*\n` +
+              `  💨 Утаа: ${d.smoke} | 🔋 ${d.battery}%\n` +
+              `  📶 RSSI: ${d.rssi} | SNR: ${d.snr}\n` +
+              `  📡 ${d.dataRate} | 🕐 ${d.lastSeen || 'N/A'}\n\n`;
+          }
+        }
+        statusMsg += `👥 Бүртгэлтэй: ${Object.keys(registeredUsers).length}`;
         await sendTelegramTo(chatId, statusMsg);
       }
-
       else if (text === '/register') {
-        if (registeredUsers[chatId]) {
-          await sendTelegramTo(chatId, `✅ ${firstName}, та аль хэдийн бүртгэлтэй байна!`);
-        } else {
+        if (!registeredUsers[chatId]) {
           registeredUsers[chatId] = { name: firstName, registered: new Date().toISOString() };
-          const count = Object.keys(registeredUsers).length;
-          await sendTelegramTo(chatId, `✅ *Амжилттай бүртгэгдлээ!*\n\n${firstName}, та одоо галын дохионы мэдэгдэл хүлээн авна.\n\n👥 Нийт бүртгэлтэй: ${count} хэрэглэгч`);
         }
+        await sendTelegramTo(chatId, `✅ *${firstName}*, бүртгэгдлээ! Alarm мэдэгдэл хүлээн авна.`);
       }
-
       else if (text === '/unregister') {
-        if (registeredUsers[chatId]) {
-          delete registeredUsers[chatId];
-          await sendTelegramTo(chatId, `❌ ${firstName}, та бүртгэлээс гарлаа. Цаашид alarm мэдэгдэл ирэхгүй.`);
-        } else {
-          await sendTelegramTo(chatId, `ℹ️ Та бүртгэлгүй байна. /register гэж бүртгүүлнэ үү.`);
-        }
+        delete registeredUsers[chatId];
+        await sendTelegramTo(chatId, `❌ Бүртгэлээс гарлаа.`);
       }
-
       else if (text === '/test') {
         const now = new Date().toLocaleString('mn-MN', { timeZone: 'Asia/Ulaanbaatar' });
         const event = {
-          deviceId: 'fire-node-01', alarm: true, source: 'TELEGRAM-TEST',
-          smoke: 750, battery: 85, time: now, rssi: -65, snr: 8.5
+          deviceId: 'test-node', alarm: true, source: 'TELEGRAM-TEST',
+          smoke: 0, battery: 85, time: now, rssi: -45, snr: 12,
+          sf: 9, dataRate: 'SF9BW125', payloadBytes: 6, frequency: '868.1'
         };
-        lastStatus.alarm = true;
-        lastStatus.source = 'TELEGRAM-TEST';
-        lastStatus.smoke = 750;
-        lastStatus.lastSeen = now;
-        lastStatus.status = 'online';
-        lastStatus.totalAlarms++;
+        const device = getOrCreateDevice('test-node');
+        Object.assign(device, { alarm: true, source: 'TELEGRAM-TEST', smoke: 0, battery: 85, lastSeen: now, status: 'online', totalAlarms: device.totalAlarms + 1, rssi: -45, snr: 12, sf: 9, dataRate: 'SF9BW125' });
         history.unshift(event);
-        broadcast({ type: 'update', status: lastStatus, event: event });
+        broadcast({ type: 'update', device, event, devices });
         await sendTelegram(event);
       }
-
       else if (text === '/help') {
         await sendTelegramTo(chatId,
-          `🛡 *Тусламж*\n\n` +
-          `/status — Системийн статус\n` +
-          `/register — Мэдэгдэл авах бүртгүүлэх\n` +
-          `/unregister — Бүртгэлээс гарах\n` +
-          `/test — Тест alarm\n\n` +
-          `Галын дохио ирэхэд бүртгэлтэй бүх хэрэглэгчид рүү мэдэгдэл очно.`);
+          `🛡 *Тусламж*\n\n/status — Статус\n/register — Бүртгүүлэх\n/unregister — Гарах\n/test — Тест alarm`);
       }
     }
-  } catch (err) {
-    // Polling error - silent retry
-  }
+  } catch (err) { /* silent */ }
 }
 
-// 3 секунд тутам Telegram шинэчлэлт шалгах
 setInterval(pollTelegram, 3000);
 pollTelegram();
 
 // ===== API =====
-app.get('/api/status', (req, res) => {
-  res.json(lastStatus);
-});
+app.get('/api/status', (req, res) => res.json(devices));
+app.get('/api/history', (req, res) => res.json(history));
+app.get('/api/devices', (req, res) => res.json(devices));
 
-app.get('/api/history', (req, res) => {
-  res.json(history);
-});
-
-// ===== Test endpoints =====
 app.post('/api/test-alarm', (req, res) => {
   const now = new Date().toLocaleString('mn-MN', { timeZone: 'Asia/Ulaanbaatar' });
   const event = {
-    deviceId: 'fire-node-01',
-    alarm: true,
-    source: 'TEST',
-    smoke: 750,
-    battery: 85,
-    time: now,
-    rssi: -65,
-    snr: 8.5
+    deviceId: 'fire-node-04', alarm: true, source: 'test', smoke: 0, battery: 85,
+    time: now, timestamp: new Date().toISOString(), rssi: -45, snr: 12.5,
+    sf: 9, dataRate: 'SF9BW125', payloadBytes: 6, fPort: 1, fCnt: 42,
+    frequency: '868.1', devAddr: '260B5723'
   };
-  lastStatus.alarm = true;
-  lastStatus.source = 'TEST';
-  lastStatus.smoke = 750;
-  lastStatus.lastSeen = now;
-  lastStatus.status = 'online';
-  lastStatus.totalAlarms++;
+  const device = getOrCreateDevice('fire-node-04');
+  Object.assign(device, { alarm: true, source: 'test', smoke: 0, battery: 85, lastSeen: now, status: 'online', totalAlarms: device.totalAlarms + 1, rssi: -45, snr: 12.5, sf: 9, dataRate: 'SF9BW125', payloadBytes: 6, fPort: 1, fCnt: 42 });
   history.unshift(event);
-  broadcast({ type: 'update', status: lastStatus, event: event });
+  broadcast({ type: 'update', device, event, devices });
   sendTelegram(event);
   res.json({ ok: true });
 });
@@ -273,30 +375,26 @@ app.post('/api/test-alarm', (req, res) => {
 app.post('/api/test-ok', (req, res) => {
   const now = new Date().toLocaleString('mn-MN', { timeZone: 'Asia/Ulaanbaatar' });
   const event = {
-    deviceId: 'fire-node-01',
-    alarm: false,
-    source: 'heartbeat',
-    smoke: 120,
-    battery: 92,
-    time: now,
-    rssi: -72,
-    snr: 7.2
+    deviceId: 'fire-node-04', alarm: false, source: 'heartbeat', smoke: 0, battery: 92,
+    time: now, timestamp: new Date().toISOString(), rssi: -42, snr: 13.0,
+    sf: 9, dataRate: 'SF9BW125', payloadBytes: 6, fPort: 1, fCnt: 43,
+    frequency: '868.1', devAddr: '260B5723'
   };
-  lastStatus.alarm = false;
-  lastStatus.smoke = 120;
-  lastStatus.battery = 92;
-  lastStatus.lastSeen = now;
-  lastStatus.status = 'online';
+  const device = getOrCreateDevice('fire-node-04');
+  Object.assign(device, { alarm: false, smoke: 0, battery: 92, lastSeen: now, status: 'online', rssi: -42, snr: 13, sf: 9, dataRate: 'SF9BW125', payloadBytes: 6, fPort: 1, fCnt: 43 });
   history.unshift(event);
-  broadcast({ type: 'update', status: lastStatus, event: event });
+  broadcast({ type: 'update', device, event, devices });
   res.json({ ok: true });
 });
 
 server.listen(PORT, () => {
   console.log('');
-  console.log('Fire LoRa Dashboard: http://localhost:' + PORT);
-  console.log('TTN Webhook URL:     http://YOUR_IP:' + PORT + '/ttn-webhook');
-  console.log('Test alarm:          POST http://localhost:' + PORT + '/api/test-alarm');
-  console.log('Test OK:             POST http://localhost:' + PORT + '/api/test-ok');
+  console.log('=== Fire LoRa Dashboard Server ===');
+  console.log(`Dashboard:    http://localhost:${PORT}`);
+  console.log(`TTN Webhook:  POST /ttn-webhook`);
+  console.log(`API Status:   GET /api/status`);
+  console.log(`API History:  GET /api/history`);
+  console.log(`Test Alarm:   POST /api/test-alarm`);
+  console.log(`Test OK:      POST /api/test-ok`);
   console.log('');
 });

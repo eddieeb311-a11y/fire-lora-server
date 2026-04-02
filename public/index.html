@@ -74,48 +74,59 @@
       #dashboard { height: auto; min-height: 100vh; }
       #dashboard > .flex.flex-1 { flex-direction: column; height: auto; }
       /* Header */
-      #dashboard > header { flex-wrap: wrap; gap: 8px; height: auto; padding: 8px 12px; }
-      #dashboard > header > div:first-child h1 { font-size: 11px; }
+      #dashboard > header { flex-wrap: wrap; gap: 6px; height: auto; padding: 8px 10px; }
+      #dashboard > header > div:first-child h1 { font-size: 10px; }
       #dashboard > header > div:first-child p { display: none; }
-      #dashboard > header > div:nth-child(2) { order: 3; width: 100%; justify-content: center; }
-      /* Left sidebar */
-      #dashboard > .flex.flex-1 > aside:first-child { width: 100%; border-right: none; border-bottom: 1px solid #32353c; max-height: 180px; overflow-y: auto; }
-      #dashboard > .flex.flex-1 > aside:first-child .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+      #dashboard > header > div:first-child .h-9 { width: 28px; height: 28px; }
+      #dashboard > header > div:nth-child(2) { order: 3; width: 100%; justify-content: center; padding: 4px 8px; }
+      #dashboard > header > div:nth-child(2) span:first-child { font-size: 10px; }
+      #dashboard > header > div:nth-child(2) span:last-child { font-size: 14px; }
+      /* Left sidebar — horizontal scroll on mobile */
+      #dashboard > .flex.flex-1 > aside:first-child { width: 100%; border-right: none; border-bottom: 1px solid #32353c; max-height: 160px; overflow-y: auto; }
+      #dashboard > .flex.flex-1 > aside:first-child .grid-cols-4 { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+      #dashboard > .flex.flex-1 > aside:first-child .grid-cols-4 .p-2 { padding: 4px; }
+      #dashboard > .flex.flex-1 > aside:first-child .grid-cols-4 .text-lg { font-size: 14px; }
       /* Map */
-      #dashboard > .flex.flex-1 > .flex.flex-1.flex-col { min-height: 350px; }
-      #leafletMap { min-height: 300px; }
-      /* Right panel */
+      #dashboard > .flex.flex-1 > .flex.flex-1.flex-col { min-height: 280px; }
+      #leafletMap { min-height: 240px; }
+      /* Right panel — full width on mobile */
       #dashboard > .flex.flex-1 > aside:last-child { width: 100%; border-left: none; border-top: 1px solid #32353c; }
+      #dashboard > .flex.flex-1 > aside:last-child .p-4 { padding: 10px; }
       /* Timeline */
-      .flex.h-40 { height: auto; min-height: 120px; }
-      /* Alarm overlay */
-      #alarmOverlay { align-items: flex-start !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-      #alarmOverlay > .relative.z-10 { max-width: 100%; margin: 8px; max-height: none; overflow: visible; }
-      #alarmOverlay .grid.md\\:grid-cols-2 { grid-template-columns: 1fr; gap: 16px; }
-      #alarmOverlay .p-8 { padding: 12px; }
-      #alarmOverlay h1 { font-size: 14px; }
-      #alarmOverlay .text-2xl { font-size: 18px; }
-      #alarmOverlay .py-6 { padding-top: 16px; padding-bottom: 16px; }
-      #alarmOverlay .p-6 { padding: 12px; }
-      #alarmOverlay .space-y-8 > * + * { margin-top: 16px; }
-      #contactList a { padding: 8px; }
-      #contactList .p-3 { padding: 6px 8px; }
+      .flex.h-40 { height: auto; min-height: 100px; }
       /* Route info */
-      #routeInfo { top: 8px; right: 8px; }
-      /* Corner warnings */
-      #alarmOverlay > .absolute.left-4 { left: 8px; top: 8px; padding: 4px 8px; }
-      #alarmOverlay > .absolute.right-4 { right: 8px; top: 8px; padding: 4px 8px; }
-      /* Contact list */
-      #contactList a { padding: 8px; }
-      #contactList .w-8 { width: 28px; height: 28px; }
+      #routeInfo { top: 6px; right: 6px; padding: 6px 8px; }
+      /* Legend */
+      .absolute.bottom-4.left-4 { bottom: 6px; left: 6px; padding: 4px 8px; gap: 6px; }
+      /* Alarm overlay */
+      #alarmOverlay { align-items: flex-start !important; padding: 8px !important; }
+      #alarmOverlay > .relative.z-10 { max-width: 100%; margin: 0; border-left-width: 3px; }
+      #alarmOverlay .p-5 { padding: 12px; }
+      #alarmOverlay .space-y-4 > * + * { margin-top: 10px; }
+      #alarmOverlay h1 { font-size: 13px; }
+      #alarmOverlay .grid-cols-2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+      #alarmOverlay .py-4 { padding-top: 12px; padding-bottom: 12px; }
+      #contactList a { padding: 6px 8px; }
+      #contactList .w-7 { width: 24px; height: 24px; }
+      /* Corner badges */
+      #alarmOverlay > .absolute.left-3 { left: 4px; top: 4px; padding: 3px 6px; }
+      #alarmOverlay > .absolute.left-3 span { font-size: 10px; }
+      #alarmOverlay > .absolute.right-3 { right: 4px; top: 4px; padding: 3px 6px; }
+      #alarmOverlay > .absolute.right-3 span { font-size: 10px; }
+      /* LoRa grid */
+      .grid.grid-cols-2.gap-2 { gap: 4px; }
+      .grid.grid-cols-2.gap-2 .p-2\.5 { padding: 6px; }
+      /* Test buttons */
+      #dashboard > header button { padding: 4px 8px; font-size: 10px; }
     }
 
-    @media (max-width: 480px) {
-      #dashboard > header > div:nth-child(3) { flex-wrap: wrap; gap: 4px; }
+    @media (max-width: 380px) {
+      #dashboard > header > div:nth-child(3) { flex-wrap: wrap; gap: 3px; }
       #dashboard > header > div:nth-child(3) .rounded-md { display: none; }
-      #dashboard > .flex.flex-1 > aside:first-child { max-height: 140px; }
-      #alarmOverlay h1 { font-size: 14px; }
-      #alarmOverlay .font-headline.text-xl { font-size: 16px; }
+      #dashboard > .flex.flex-1 > aside:first-child { max-height: 130px; }
+      #alarmOverlay h1 { font-size: 12px; }
+      #alarmOverlay .text-xl { font-size: 14px; }
+      #alarmOverlay .grid-cols-2 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -304,168 +315,207 @@
         </div>
       </div>
 
-      <!-- Location & Last Update -->
-      <div class="p-4 space-y-3">
-        <div class="flex items-center gap-2 text-xs">
-          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">location_on</span>
-          <span class="text-on-surface-variant/60">Байршил:</span>
-          <span class="font-mono" id="nodeLocation">47.9184°N, 106.9177°E</span>
+      <!-- LoRa Radio Info -->
+      <div class="border-b border-surface-variant p-4 overflow-y-auto" style="max-height:280px">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-sm text-primary">cell_tower</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">LoRa Радио</span>
         </div>
-        <div class="flex items-center gap-2 text-xs">
-          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">schedule</span>
-          <span class="text-on-surface-variant/60">Сүүлд шинэчлэгдсэн:</span>
-          <span id="lastUpdate">---</span>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">RSSI</p>
+            <p class="font-mono text-sm font-bold" id="loraRssi">--</p>
+            <p class="text-[9px] mt-0.5" id="loraRssiQuality">---</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">SNR</p>
+            <p class="font-mono text-sm font-bold" id="loraSnr">--</p>
+            <p class="text-[9px] text-on-surface-variant/50">dB</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">SF</p>
+            <p class="font-mono text-sm font-bold" id="loraSf">--</p>
+            <p class="text-[9px] text-on-surface-variant/50" id="loraDataRate">---</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">Давтамж</p>
+            <p class="font-mono text-sm font-bold" id="loraFreq">--</p>
+            <p class="text-[9px] text-on-surface-variant/50">MHz</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">Payload</p>
+            <p class="font-mono text-sm font-bold" id="loraPayload">--</p>
+            <p class="text-[9px] text-on-surface-variant/50">bytes</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">fCnt</p>
+            <p class="font-mono text-sm font-bold" id="loraFcnt">--</p>
+            <p class="text-[9px] text-on-surface-variant/50">frame</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">fPort</p>
+            <p class="font-mono text-sm font-bold" id="loraFport">--</p>
+          </div>
+          <div class="rounded-md bg-surface-container-low p-2.5">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">DevAddr</p>
+            <p class="font-mono text-[11px] font-bold" id="loraDevAddr">--</p>
+          </div>
         </div>
-        <div class="flex items-center gap-2 text-xs">
-          <span class="material-symbols-outlined text-sm text-on-surface-variant/60">thermostat</span>
-          <span class="text-on-surface-variant/60">Температур:</span>
-          <span class="font-mono" id="tempValue">21°C</span>
+        <div class="mt-2 rounded-md bg-surface-container-low p-2.5">
+          <div class="flex items-center justify-between">
+            <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">Gateway</p>
+            <p class="font-mono text-[10px]" id="loraGateway">--</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location (Detailed) -->
+      <div class="border-b border-surface-variant p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant/60">Байршил</span>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-start gap-2 text-xs">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/40 mt-0.5">apartment</span>
+            <div>
+              <p class="font-semibold" id="locBuilding">ШУТИС, Мэдээлэл технологийн сургууль</p>
+              <p class="text-[10px] text-on-surface-variant/50" id="locFloor">2-р давхар, 204 тоот</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 text-xs">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/40 mt-0.5">map</span>
+            <div>
+              <p id="locAddress">Баянгол дүүрэг, 8-р хороо</p>
+              <p class="text-[10px] text-on-surface-variant/50" id="locStreet">Бага тойруу-14, Улаанбаатар</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/40">my_location</span>
+            <span class="font-mono text-[10px] text-on-surface-variant/50" id="locCoords">47.9184°N, 106.9177°E</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Last Update & Uptime -->
+      <div class="p-4 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/60">schedule</span>
+            <span class="text-on-surface-variant/60">Сүүлд:</span>
+          </div>
+          <span class="font-mono text-[11px]" id="lastUpdate">---</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-on-surface-variant/60">timer</span>
+            <span class="text-on-surface-variant/60">Uptime:</span>
+          </div>
+          <span class="font-mono text-[11px]" id="uptimeValue">--</span>
         </div>
       </div>
     </aside>
   </div>
 </div>
 
-<!-- ==================== ALARM OVERLAY ==================== -->
+<!-- ==================== ALARM OVERLAY (Compact) ==================== -->
 <div id="alarmOverlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4 overflow-y-auto">
   <div class="absolute inset-0 animate-pulse-red bg-error-container/60 backdrop-blur-xl"></div>
-  <div class="relative z-10 w-full max-w-3xl bg-surface-dim border-l-8 border-primary-container shadow-[0_0_64px_rgba(255,85,69,0.3)] overflow-hidden max-h-[90vh] overflow-y-auto">
+  <div class="relative z-10 w-full max-w-lg bg-surface-dim border-l-4 border-primary-container shadow-[0_0_64px_rgba(255,85,69,0.3)] overflow-hidden max-h-[95vh] overflow-y-auto">
     <!-- Top Bar -->
-    <div class="flex items-center justify-between bg-alarm px-6 py-4">
-      <div class="flex items-center gap-3">
-        <span class="material-symbols-outlined text-3xl font-bold text-white material-filled">warning</span>
-        <h1 class="font-headline font-extrabold text-2xl tracking-tighter uppercase text-white">ГАЛЫН АЮУЛЫН СЭРЭМЖЛҮҮЛЭГ</h1>
+    <div class="flex items-center justify-between bg-alarm px-4 py-3">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-2xl text-white material-filled">warning</span>
+        <h1 class="font-headline font-extrabold text-lg tracking-tighter uppercase text-white">ГАЛЫН ДОХИОЛОЛ</h1>
       </div>
-      <div class="font-label text-sm font-bold tracking-widest bg-white/20 px-3 py-1 text-white">PRIORITY 1 // CRITICAL</div>
+      <div class="font-label text-[10px] font-bold tracking-widest bg-white/20 px-2 py-1 text-white">CRITICAL</div>
     </div>
     <!-- Content -->
-    <div class="p-8 grid md:grid-cols-2 gap-12">
-      <div class="space-y-8">
-        <div class="space-y-2">
-          <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">БАЙРШИЛ / LOCATION</span>
-          <div class="bg-surface-container-high p-4 flex items-start gap-4">
-            <span class="material-symbols-outlined text-primary mt-1">location_on</span>
-            <div>
-              <p class="font-headline text-xl font-bold">ХАН-УУЛ ДҮҮРЭГ, 15-Р ХОРОО</p>
-              <p class="font-label text-sm text-on-surface-variant/60">S-402 // 47.9188° N, 106.9176° E</p>
-            </div>
-          </div>
+    <div class="p-5 space-y-4">
+      <!-- Device + Status -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-surface-container-high p-3 rounded">
+          <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">Төхөөрөмж</p>
+          <p class="font-label text-base font-bold mt-1" id="alarmDevice">fire-node-04</p>
+          <p class="font-label text-[10px] text-on-surface-variant/60">LoRa Fire Node</p>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">ТӨХӨӨРӨМЖ</span>
-            <div class="bg-surface-container-high p-4">
-              <p class="font-label text-lg font-bold" id="alarmDevice">fire-node-01</p>
-              <p class="font-label text-[10px] text-on-surface-variant/60 uppercase">LoRa Fire Node</p>
-            </div>
-          </div>
-          <div class="space-y-2">
-            <span class="font-label text-xs text-primary font-bold tracking-widest uppercase">ДОХИОНЫ ТӨЛӨВ</span>
-            <div class="bg-surface-container-high p-4 flex items-baseline gap-2">
-              <p class="font-headline text-2xl font-black text-primary" id="alarmSmoke">ИДЭВХТЭЙ</p>
-              <span class="material-symbols-outlined text-sm text-primary">warning</span>
-            </div>
-          </div>
+        <div class="bg-surface-container-high p-3 rounded">
+          <p class="text-[9px] text-on-surface-variant/50 uppercase tracking-wider">Төлөв</p>
+          <p class="font-headline text-xl font-black text-primary mt-1" id="alarmSmoke">ИДЭВХТЭЙ</p>
         </div>
       </div>
-      <div class="flex flex-col justify-between space-y-8">
-        <div class="space-y-6">
-          <div class="p-6 bg-alarm/10 border-l-2 border-alarm">
-            <h3 class="font-headline font-bold text-lg mb-4 text-primary">ЯАРАЛТАЙ ТҮГШҮҮР: ГАЛ ИЛРЭВ</h3>
-            <ul class="space-y-3 font-body text-sm text-on-surface-variant">
-              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span>Бүх агааржуулалтын системийг хаасан.</li>
-              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span>Төв удирдлагад дохиолол дамжуулсан.</li>
-              <li class="flex gap-3"><span class="material-symbols-outlined text-primary text-sm">emergency</span>Яаралтай тусламжийн нэгжийг дуудсан.</li>
-            </ul>
-          </div>
-          <div class="flex items-center gap-4 p-4 border border-surface-variant/30">
-            <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
-              <span class="material-symbols-outlined text-primary">timer</span>
-            </div>
-            <div>
-              <p class="font-label text-[10px] uppercase text-on-surface-variant/60 tracking-tighter">TIME SINCE DETECTION</p>
-              <p class="font-label text-lg font-bold" id="alarmTimer">00:00:00</p>
-            </div>
-          </div>
+      <!-- Location (Detailed) -->
+      <div class="bg-surface-container-high p-3 rounded space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">location_on</span>
+          <p class="text-xs font-bold" id="alarmBuilding">ШУТИС, Мэдээлэл технологийн сургууль</p>
         </div>
-        <!-- ЯАРАЛТАЙ ХОЛБОО БАРИХ -->
-        <div class="p-4 bg-surface-container rounded border border-surface-variant">
-          <h4 class="font-label text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-            <span class="material-symbols-outlined text-sm">contact_phone</span>ЯАРАЛТАЙ ХОЛБОО БАРИХ
-          </h4>
-          <div class="space-y-2" id="contactList">
-            <a href="tel:+97699112233" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-alarm/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-alarm">local_fire_department</span></div>
-                <div><p class="text-xs font-semibold">Онцгой байдал 101</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 101</p></div>
-              </div>
-              <div class="flex items-center gap-1 bg-alarm/20 text-alarm px-3 py-1.5 rounded-full group-hover:bg-alarm group-hover:text-white transition-all">
-                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
-              </div>
-            </a>
-            <a href="tel:+97699001122" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">person</span></div>
-                <div><p class="text-xs font-semibold">Барилгын эзэн</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9900-1122</p></div>
-              </div>
-              <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
-                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
-              </div>
-            </a>
-            <a href="tel:+97699334455" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">security</span></div>
-                <div><p class="text-xs font-semibold">Хамгаалалтын ажилтан</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9933-4455</p></div>
-              </div>
-              <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
-                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
-              </div>
-            </a>
-            <a href="tel:+97699556677" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-ok/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-ok">engineering</span></div>
-                <div><p class="text-xs font-semibold">Инженер / Техникч</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9955-6677</p></div>
-              </div>
-              <div class="flex items-center gap-1 bg-ok/20 text-ok px-3 py-1.5 rounded-full group-hover:bg-ok group-hover:text-white transition-all">
-                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
-              </div>
-            </a>
-            <a href="tel:+97699778899" class="flex items-center justify-between p-3 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-ok/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-ok">supervisor_account</span></div>
-                <div><p class="text-xs font-semibold">Менежер / Удирдлага</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9977-8899</p></div>
-              </div>
-              <div class="flex items-center gap-1 bg-ok/20 text-ok px-3 py-1.5 rounded-full group-hover:bg-ok group-hover:text-white transition-all">
-                <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
-              </div>
-            </a>
-          </div>
+        <div class="pl-7 space-y-1">
+          <p class="text-[11px]" id="alarmFloor">2-р давхар, 204 тоот</p>
+          <p class="text-[11px] text-on-surface-variant/60" id="alarmAddress">Баянгол дүүрэг, 8-р хороо, Бага тойруу-14</p>
+          <p class="font-mono text-[10px] text-on-surface-variant/40" id="alarmCoords">47.9184° N, 106.9177° E</p>
         </div>
-
-        <button onclick="acknowledgeAlarm()" class="group relative w-full overflow-hidden bg-alarm py-6 transition-all hover:scale-[1.01] active:scale-95 duration-100 shadow-[0_12px_24px_rgba(255,85,69,0.3)] mt-4">
-          <div class="relative z-10 flex items-center justify-center gap-4 text-white">
-            <span class="material-symbols-outlined font-bold text-2xl">verified_user</span>
-            <span class="font-headline font-extrabold text-xl tracking-tight uppercase">ХҮЛЭЭН ЗӨВШӨӨРӨХ</span>
-          </div>
-        </button>
-        <p class="text-center font-label text-[10px] text-on-surface-variant/40 uppercase tracking-widest">БҮХ ҮЙЛДЭЛ СИСТЕМД БҮРТГЭГДЭЖ БАЙНА</p>
       </div>
+      <!-- Timer -->
+      <div class="flex items-center gap-3 p-3 border border-surface-variant/30 rounded">
+        <span class="material-symbols-outlined text-primary">timer</span>
+        <div>
+          <p class="font-label text-[9px] uppercase text-on-surface-variant/60 tracking-wider">Илрүүлснээс хойш</p>
+          <p class="font-label text-lg font-bold" id="alarmTimer">00:00:00</p>
+        </div>
+      </div>
+      <!-- Emergency Contacts -->
+      <div class="space-y-1.5" id="contactList">
+        <a href="tel:101" class="flex items-center justify-between p-2.5 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-alarm/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-alarm">local_fire_department</span></div>
+            <div><p class="text-xs font-semibold">Онцгой байдал</p><p class="font-mono text-[10px] text-on-surface-variant/60">101</p></div>
+          </div>
+          <div class="flex items-center gap-1 bg-alarm/20 text-alarm px-2.5 py-1 rounded-full group-hover:bg-alarm group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+          </div>
+        </a>
+        <a href="tel:+97699001122" class="flex items-center justify-between p-2.5 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">person</span></div>
+            <div><p class="text-xs font-semibold">Барилгын эзэн</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9900-1122</p></div>
+          </div>
+          <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+          </div>
+        </a>
+        <a href="tel:+97699334455" class="flex items-center justify-between p-2.5 bg-surface-container-high rounded hover:bg-alarm/10 transition-all group">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center"><span class="material-symbols-outlined text-sm text-blue-400">security</span></div>
+            <div><p class="text-xs font-semibold">Хамгаалалт</p><p class="font-mono text-[10px] text-on-surface-variant/60">+976 9933-4455</p></div>
+          </div>
+          <div class="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-all">
+            <span class="material-symbols-outlined text-sm">call</span><span class="text-[10px] font-bold">ЗАЛГАХ</span>
+          </div>
+        </a>
+      </div>
+      <!-- Acknowledge -->
+      <button onclick="acknowledgeAlarm()" class="group w-full bg-alarm py-4 rounded transition-all hover:scale-[1.01] active:scale-95 shadow-[0_8px_20px_rgba(255,85,69,0.3)]">
+        <div class="flex items-center justify-center gap-3 text-white">
+          <span class="material-symbols-outlined text-xl">verified_user</span>
+          <span class="font-headline font-extrabold text-base tracking-tight uppercase">ХҮЛЭЭН ЗӨВШӨӨРӨХ</span>
+        </div>
+      </button>
+      <p class="text-center font-label text-[9px] text-on-surface-variant/40 uppercase tracking-widest">Бүх үйлдэл бүртгэгдэж байна</p>
     </div>
   </div>
-  <div class="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-alarm px-4 py-2 z-20">
-    <div class="h-3 w-3 animate-ping rounded-full bg-white"></div>
-    <span class="text-sm font-bold uppercase text-white">Яаралтай</span>
+  <!-- Corner badges -->
+  <div class="absolute left-3 top-3 flex items-center gap-2 rounded-lg bg-alarm px-3 py-1.5 z-20">
+    <div class="h-2.5 w-2.5 animate-ping rounded-full bg-white"></div>
+    <span class="text-xs font-bold uppercase text-white">Яаралтай</span>
   </div>
-  <div class="absolute right-4 top-4 flex items-center gap-2 rounded-lg bg-alarm px-4 py-2 z-20">
-    <span class="text-sm font-bold uppercase text-white">Emergency</span>
-    <div class="h-3 w-3 animate-ping rounded-full bg-white"></div>
+  <div class="absolute right-3 top-3 flex items-center gap-2 rounded-lg bg-alarm px-3 py-1.5 z-20">
+    <span class="text-xs font-bold uppercase text-white">Emergency</span>
+    <div class="h-2.5 w-2.5 animate-ping rounded-full bg-white"></div>
   </div>
 </div>
 
-<!-- ==================== AUDIO ==================== -->
-<audio id="alarmSound" loop preload="auto">
-  <source src="data:audio/wav;base64,UklGRl9vT19teleQ=" type="audio/wav"/>
-</audio>
+<!-- ==================== ALARM SOUND (Web Audio API) ==================== -->
 
 <script>
 // ===== MAP SETUP =====
@@ -490,11 +540,19 @@ let routeLine = null;
 let pulseCircle = null;
 
 function updateMapMarker(status) {
+  // Device-ийн бодит координатаар marker шилжүүлэх
+  const loc = status.location || {};
+  if (loc.lat && loc.lng) {
+    const pos = [loc.lat, loc.lng];
+    fireMarker.setLatLng(pos);
+    fireMarker.setPopupContent('<b>' + (status.deviceId || 'fire-node') + '</b><br>' + (loc.building || 'Галын мэдрэгч') + '<br>' + (loc.floor || ''));
+  }
   if (status.alarm) {
     fireMarker.setIcon(fireIconAlarm);
+    const pos = fireMarker.getLatLng();
     if (!pulseCircle) {
-      pulseCircle = L.circle(FIRE_NODE_POS, { radius: 200, color: '#ff5545', fillColor: '#ff5545', fillOpacity: 0.15, weight: 2 }).addTo(map);
-    }
+      pulseCircle = L.circle(pos, { radius: 200, color: '#ff5545', fillColor: '#ff5545', fillOpacity: 0.15, weight: 2 }).addTo(map);
+    } else { pulseCircle.setLatLng(pos); }
   } else if (status.status === 'online') {
     fireMarker.setIcon(fireIconOk);
     if (pulseCircle) { map.removeLayer(pulseCircle); pulseCircle = null; }
@@ -531,13 +589,56 @@ function hideRoute() {
   map.setView([47.9160, 106.9120], 14);
 }
 
+// ===== ALARM SOUND (Web Audio API) =====
+let audioCtx = null;
+let alarmOscillator = null;
+let alarmGain = null;
+
+function startAlarmSound() {
+  if (alarmOscillator) return;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  alarmGain = audioCtx.createGain();
+  alarmGain.gain.value = 0.3;
+  alarmGain.connect(audioCtx.destination);
+  alarmOscillator = audioCtx.createOscillator();
+  alarmOscillator.type = 'square';
+  alarmOscillator.frequency.value = 880;
+  alarmOscillator.connect(alarmGain);
+  alarmOscillator.start();
+  // Siren effect: alternate 880Hz / 660Hz
+  function siren() {
+    if (!alarmOscillator) return;
+    alarmOscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+    alarmOscillator.frequency.setValueAtTime(660, audioCtx.currentTime + 0.5);
+    setTimeout(siren, 1000);
+  }
+  siren();
+}
+
+function stopAlarmSound() {
+  if (alarmOscillator) {
+    alarmOscillator.stop();
+    alarmOscillator.disconnect();
+    alarmOscillator = null;
+  }
+  if (alarmGain) { alarmGain.disconnect(); alarmGain = null; }
+}
+
 // ===== STATE =====
-let lastStatus = { alarm: false, smoke: 0, battery: 0, status: 'offline', lastSeen: null, totalAlarms: 0, deviceId: 'fire-node-01', source: 'N/A' };
+let allDevices = {};
+let selectedDeviceId = null;
 let events = [];
 let alarmActive = false;
 let alarmStartTime = null;
 let alarmTimerInterval = null;
 let currentFilter = 'all';
+
+function getSelectedDevice() {
+  if (selectedDeviceId && allDevices[selectedDeviceId]) return allDevices[selectedDeviceId];
+  const keys = Object.keys(allDevices);
+  if (keys.length > 0) { selectedDeviceId = keys[0]; return allDevices[keys[0]]; }
+  return { alarm: false, smoke: 0, battery: 0, status: 'offline', lastSeen: null, totalAlarms: 0, deviceId: 'unknown', source: 'N/A', rssi: 0, snr: 0, sf: 0, dataRate: '', payloadBytes: 0, devAddr: '', fPort: 0, fCnt: 0, frequency: 0, bandwidth: 0, gatewayId: '', uptime: 0 };
+}
 
 // ===== CLOCK =====
 function updateClock() {
@@ -557,12 +658,21 @@ function connectWS() {
   ws.onclose = () => { setOnline(false); setTimeout(connectWS, 3000); };
   ws.onmessage = (msg) => {
     const data = JSON.parse(msg.data);
-    if (data.type === 'update') {
-      lastStatus = { ...lastStatus, ...data.status };
-      if (data.event) events.unshift(data.event);
+    if (data.type === 'init') {
+      if (data.devices) { allDevices = data.devices; if (!selectedDeviceId) { const keys = Object.keys(allDevices); if (keys.length) selectedDeviceId = keys[0]; } }
+      if (data.history) events = data.history;
       updateUI();
-      if (data.status.alarm && !alarmActive) showAlarm(data.event || data.status);
-      if (!data.status.alarm) hideRoute();
+    }
+    if (data.type === 'update') {
+      if (data.devices) allDevices = data.devices;
+      else if (data.device) allDevices[data.device.deviceId] = data.device;
+      if (!selectedDeviceId && data.device) selectedDeviceId = data.device.deviceId;
+      if (data.event) events.unshift(data.event);
+      if (events.length > 100) events.length = 100;
+      updateUI();
+      const dev = data.device || getSelectedDevice();
+      if (dev.alarm && !alarmActive) showAlarm(data.event || dev);
+      if (!dev.alarm && alarmActive) { acknowledgeAlarm(); hideRoute(); }
     }
   };
 }
@@ -584,13 +694,18 @@ function setOnline(online) {
 
 // ===== UPDATE UI =====
 function updateUI() {
-  const s = lastStatus;
+  const deviceList = Object.values(allDevices);
+  const s = getSelectedDevice();
+  // Stats
+  let okC=0, warnC=0, alarmC=0, offC=0;
+  deviceList.forEach(d => { if (d.alarm) alarmC++; else if (d.status==='online') okC++; else offC++; });
+  if (deviceList.length === 0) offC = 1;
+  document.getElementById('statOk').textContent = okC;
+  document.getElementById('statWarn').textContent = warnC;
+  document.getElementById('statAlarm').textContent = alarmC;
+  document.getElementById('statOff').textContent = offC;
   // Node sidebar
   updateNodeList();
-  // Stats
-  document.getElementById('statOk').textContent = s.alarm ? '0' : (s.status === 'online' ? '1' : '0');
-  document.getElementById('statAlarm').textContent = s.alarm ? '1' : '0';
-  document.getElementById('statOff').textContent = s.status === 'offline' ? '1' : '0';
   // Map marker
   updateMapMarker(s);
   // Right panel
@@ -600,19 +715,26 @@ function updateUI() {
 }
 
 function updateNodeList() {
-  const s = lastStatus;
-  const statusClass = s.alarm ? 'border-alarm bg-alarm/10' : (s.status === 'online' ? 'border-transparent hover:border-surface-variant hover:bg-surface-container' : 'border-transparent opacity-50');
-  const statusIcon = s.alarm ? 'local_fire_department' : (s.status === 'online' ? 'check_circle' : 'wifi_off');
-  const statusColor = s.alarm ? 'text-alarm' : (s.status === 'online' ? 'text-ok' : 'text-offline');
-  const statusBg = s.alarm ? 'bg-alarm/20' : (s.status === 'online' ? 'bg-ok/20' : 'bg-offline/20');
-  const smokeColor = s.alarm ? 'bg-alarm' : 'bg-ok';
-
-  document.getElementById('nodeList').innerHTML = `
-    <button class="flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-all ${statusClass}">
+  const deviceList = Object.values(allDevices);
+  if (deviceList.length === 0) {
+    document.getElementById('nodeList').innerHTML = '<div class="flex items-center justify-center text-xs text-on-surface-variant/40 p-4">Төхөөрөмж байхгүй</div>';
+    return;
+  }
+  // Sort: alarm first, then online, then offline
+  deviceList.sort((a,b) => { if (a.alarm && !b.alarm) return -1; if (!a.alarm && b.alarm) return 1; if (a.status==='online' && b.status!=='online') return -1; return 0; });
+  document.getElementById('nodeList').innerHTML = deviceList.map(s => {
+    const isSelected = s.deviceId === selectedDeviceId;
+    const statusClass = s.alarm ? 'border-alarm bg-alarm/10' : (isSelected ? 'border-primary/40 bg-primary/5' : (s.status === 'online' ? 'border-transparent hover:border-surface-variant hover:bg-surface-container' : 'border-transparent opacity-50'));
+    const statusIcon = s.alarm ? 'local_fire_department' : (s.status === 'online' ? 'check_circle' : 'wifi_off');
+    const statusColor = s.alarm ? 'text-alarm' : (s.status === 'online' ? 'text-ok' : 'text-offline');
+    const statusBg = s.alarm ? 'bg-alarm/20' : (s.status === 'online' ? 'bg-ok/20' : 'bg-offline/20');
+    const smokeColor = s.alarm ? 'bg-alarm' : 'bg-ok';
+    const rssiText = s.rssi ? `${s.rssi} dBm` : '--';
+    return `<button onclick="selectDevice('${s.deviceId}')" class="flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-all ${statusClass}">
       <div class="flex items-start justify-between">
         <div class="flex items-center gap-2">
           <div class="rounded-md p-1.5 ${statusBg}"><span class="material-symbols-outlined h-4 w-4 ${statusColor} text-base">${statusIcon}</span></div>
-          <div><p class="text-xs font-medium">${s.deviceId || 'fire-node-01'}</p><p class="font-mono text-[10px] text-on-surface-variant/60">NODE-001</p></div>
+          <div><p class="text-xs font-medium">${s.deviceId}</p><p class="font-mono text-[10px] text-on-surface-variant/60">${rssiText}</p></div>
         </div>
       </div>
       <div class="flex items-center justify-between">
@@ -629,16 +751,25 @@ function updateNodeList() {
         </div>
       </div>
     </button>`;
+  }).join('');
+}
+
+function selectDevice(deviceId) {
+  selectedDeviceId = deviceId;
+  updateUI();
 }
 
 function updateRightPanel() {
-  const s = lastStatus;
+  const s = getSelectedDevice();
+  // Node name
+  document.getElementById('nodeName').textContent = s.deviceId || 'unknown';
+  document.getElementById('nodeId').textContent = s.devAddr ? 'DevAddr: ' + s.devAddr : s.deviceId;
   // Status badge
   const badge = document.getElementById('nodeStatusBadge');
   if (s.alarm) { badge.textContent = 'Аюултай!'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-alarm/20 text-alarm animate-pulse'; }
   else if (s.status === 'online') { badge.textContent = 'Хэвийн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-ok/20 text-ok'; }
   else { badge.textContent = 'Офлайн'; badge.className = 'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase bg-offline/20 text-offline'; }
-  // Галын дохио: alarm = ИДЭВХТЭЙ, else = ХЭВИЙН
+  // Галын дохио
   if (s.alarm) {
     document.getElementById('smokeValue').textContent = 'ИДЭВХТЭЙ';
     document.getElementById('smokeValue').className = 'font-mono text-2xl font-bold text-alarm animate-pulse';
@@ -657,8 +788,59 @@ function updateRightPanel() {
   document.getElementById('battValue').className = 'font-mono text-sm font-bold ' + battColor;
   document.getElementById('battBar').style.width = s.battery + '%';
   document.getElementById('battBar').className = 'h-full smoke-bar ' + battBarColor;
-  // Last update
+  // RSSI display + signal bars
+  const rssi = s.rssi || 0;
+  document.getElementById('rssiValue').textContent = rssi ? rssi + ' dBm' : '-- dBm';
+  updateSignalBars(rssi);
+  // LoRa Radio Info
+  document.getElementById('loraRssi').textContent = rssi ? rssi + ' dBm' : '--';
+  const rssiQ = rssi >= -70 ? 'text-ok' : (rssi >= -100 ? 'text-warning' : 'text-alarm');
+  const rssiLabel = rssi >= -70 ? 'Маш сайн' : (rssi >= -90 ? 'Сайн' : (rssi >= -110 ? 'Дунд' : (rssi ? 'Муу' : '---')));
+  document.getElementById('loraRssiQuality').textContent = rssiLabel;
+  document.getElementById('loraRssiQuality').className = 'text-[9px] mt-0.5 font-semibold ' + rssiQ;
+  document.getElementById('loraSnr').textContent = s.snr ? s.snr + ' dB' : '--';
+  document.getElementById('loraSf').textContent = s.sf ? 'SF' + s.sf : '--';
+  document.getElementById('loraDataRate').textContent = s.dataRate || '---';
+  document.getElementById('loraFreq').textContent = s.frequency || '--';
+  document.getElementById('loraPayload').textContent = s.payloadBytes || '--';
+  document.getElementById('loraFcnt').textContent = s.fCnt || '--';
+  document.getElementById('loraFport').textContent = s.fPort || '--';
+  document.getElementById('loraDevAddr').textContent = s.devAddr || '--';
+  document.getElementById('loraGateway').textContent = s.gatewayId || '--';
+  // Location (from server)
+  const loc = s.location || {};
+  document.getElementById('locBuilding').textContent = loc.building || 'Тодорхойгүй';
+  document.getElementById('locFloor').textContent = loc.floor || 'Тодорхойгүй';
+  document.getElementById('locAddress').textContent = loc.district || 'Тодорхойгүй';
+  document.getElementById('locStreet').textContent = loc.street || 'Тодорхойгүй';
+  document.getElementById('locCoords').textContent = loc.lat && loc.lng ? loc.lat.toFixed(4) + '°N, ' + loc.lng.toFixed(4) + '°E' : '--';
+  // Last update & uptime
   document.getElementById('lastUpdate').textContent = s.lastSeen || '---';
+  if (s.uptime) {
+    const h = Math.floor(s.uptime / 3600); const m = Math.floor((s.uptime % 3600) / 60);
+    document.getElementById('uptimeValue').textContent = h + 'ц ' + m + 'м';
+  } else { document.getElementById('uptimeValue').textContent = '--'; }
+}
+
+function updateSignalBars(rssi) {
+  const bars = document.getElementById('signalBars').children;
+  const heights = [8,12,16,20,24];
+  let level = 0;
+  if (rssi && rssi !== 0) {
+    if (rssi >= -70) level = 5;
+    else if (rssi >= -80) level = 4;
+    else if (rssi >= -90) level = 3;
+    else if (rssi >= -100) level = 2;
+    else if (rssi >= -120) level = 1;
+  }
+  const colorClass = level >= 4 ? 'bg-ok' : (level >= 2 ? 'bg-warning' : (level >= 1 ? 'bg-alarm' : 'bg-surface-variant'));
+  for (let i = 0; i < 5; i++) {
+    bars[i].style.height = heights[i] + 'px';
+    bars[i].className = 'flex-1 rounded-sm ' + (i < level ? colorClass : 'bg-surface-variant');
+  }
+  // Top bar LoRa signal bars
+  const s4 = document.getElementById('signal4');
+  if (s4) s4.className = 'w-1 h-[16px] rounded-sm ' + (level >= 4 ? 'bg-ok' : 'bg-surface-variant');
 }
 
 function updateTimeline() {
@@ -674,13 +856,18 @@ function updateTimeline() {
     const bgColor = isAlarm ? 'bg-alarm/10' : 'bg-ok/10';
     const icon = isAlarm ? 'local_fire_department' : 'check_circle';
     const iconColor = isAlarm ? 'text-alarm' : 'text-ok';
-    return `<div class="flex min-w-[280px] flex-col gap-2 rounded-lg border p-3 ${borderColor} ${bgColor} shrink-0">
+    const rssiInfo = e.rssi ? ` | ${e.rssi}dBm` : '';
+    const sfInfo = e.sf ? ` SF${e.sf}` : '';
+    return `<div class="flex min-w-[300px] flex-col gap-2 rounded-lg border p-3 ${borderColor} ${bgColor} shrink-0">
       <div class="flex items-center gap-2">
         <div class="flex h-7 w-7 items-center justify-center rounded-md ${bgColor}"><span class="material-symbols-outlined text-base ${iconColor}">${icon}</span></div>
-        <div><p class="text-xs font-medium">${isAlarm ? 'ALARM' : 'OK'} — ${e.source}</p><p class="font-mono text-[10px] text-on-surface-variant/60">${e.deviceId}</p></div>
+        <div><p class="text-xs font-medium">${isAlarm ? 'ALARM' : 'OK'} — ${e.source || 'heartbeat'}</p><p class="font-mono text-[10px] text-on-surface-variant/60">${e.deviceId}</p></div>
       </div>
-      <p class="text-xs">Дохио: ${e.alarm ? 'ИДЭВХТЭЙ' : 'Хэвийн'} | Батарей: ${e.battery}%</p>
-      <div class="text-[10px] text-on-surface-variant/40 font-mono">${e.time}</div>
+      <p class="text-xs">Дохио: ${e.alarm ? 'ИДЭВХТЭЙ' : 'Хэвийн'} | Батарей: ${e.battery}%${rssiInfo}${sfInfo}</p>
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] text-on-surface-variant/40 font-mono">${e.time}</span>
+        ${e.fCnt ? '<span class="text-[9px] text-on-surface-variant/30 font-mono">fCnt:'+e.fCnt+'</span>' : ''}
+      </div>
     </div>`;
   }).join('');
 }
@@ -690,8 +877,16 @@ function showAlarm(event) {
   alarmActive = true;
   alarmStartTime = Date.now();
   document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto';
-  document.getElementById('alarmDevice').textContent = event.deviceId || 'fire-node-01';
+  document.getElementById('alarmDevice').textContent = event.deviceId || 'unknown';
   document.getElementById('alarmSmoke').textContent = 'ИДЭВХТЭЙ';
+  // Alarm overlay байршил (server-ээс)
+  const dev = allDevices[event.deviceId];
+  const loc = dev && dev.location ? dev.location : {};
+  document.getElementById('alarmBuilding').textContent = loc.building || event.deviceId;
+  document.getElementById('alarmFloor').textContent = loc.floor || '';
+  document.getElementById('alarmAddress').textContent = (loc.district || '') + (loc.street ? ', ' + loc.street : '');
+  document.getElementById('alarmCoords').textContent = loc.lat && loc.lng ? loc.lat.toFixed(4) + '° N, ' + loc.lng.toFixed(4) + '° E' : '';
+  startAlarmSound();
   alarmTimerInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - alarmStartTime) / 1000);
     const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
@@ -705,8 +900,8 @@ function showAlarm(event) {
 function acknowledgeAlarm() {
   alarmActive = false;
   clearInterval(alarmTimerInterval);
+  stopAlarmSound();
   document.getElementById('alarmOverlay').className = 'fixed inset-0 z-50 hidden items-center justify-center p-4';
-  // Route map дээр үлдэнэ — alarm хаагдсан ч маршрут харагдсаар байна
 }
 
 // ===== FILTERS =====
@@ -726,11 +921,16 @@ function testAlarm() { fetch('/api/test-alarm', { method: 'POST' }); }
 function testOk() { fetch('/api/test-ok', { method: 'POST' }); }
 
 // ===== INITIAL LOAD =====
-fetch('/api/status').then(r => r.json()).then(s => {
-  if (s.lastSeen) { lastStatus = { ...lastStatus, ...s }; updateUI(); }
+fetch('/api/status').then(r => r.json()).then(devs => {
+  if (devs && typeof devs === 'object') {
+    allDevices = devs;
+    const keys = Object.keys(allDevices);
+    if (keys.length && !selectedDeviceId) selectedDeviceId = keys[0];
+    updateUI();
+  }
 });
 fetch('/api/history').then(r => r.json()).then(h => {
-  events = h; updateTimeline();
+  if (Array.isArray(h)) { events = h; updateTimeline(); }
 });
 </script>
 </body>
