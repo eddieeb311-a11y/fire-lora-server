@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Navigation, Wifi } from 'lucide-react'
+import { Navigation, Wifi, FlameKindling, CheckCheck, Phone } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { IncidentQueue } from '@/components/dashboard/incident-queue'
 import { IncidentDetails } from '@/components/dashboard/incident-details'
 import { SignalIndicator } from '@/components/dashboard/signal-indicator'
+import { EventLog } from '@/components/dashboard/event-log'
 import { mockResponsePoints } from '@/lib/mock-data'
 import { useLiveData } from '@/lib/use-live-data'
+import { useAlarmSound } from '@/hooks/use-alarm-sound'
 
 // Dynamic import for map to avoid SSR issues with Leaflet
 const ResponseMap = dynamic(
@@ -27,8 +29,12 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
-  const { incidents, gateway, isLive, acknowledgeIncident, resolveIncident } = useLiveData()
+  const { incidents, gateway, isLive, events, acknowledgeIncident, resolveIncident } = useLiveData()
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
+
+  // Alarm дуу — active incident байвал тоглуулна
+  const hasActiveAlarm = incidents.some(i => i.status === 'active')
+  useAlarmSound(hasActiveAlarm)
 
   // Auto-select first active incident, then first incident overall
   const firstActiveId = incidents.find(i => i.status === 'active')?.id ?? null
@@ -44,6 +50,10 @@ export default function EmergencyDashboard() {
     // Хүлээн авч, resolved болгоно (нэмэлт хүч явсан = дуусгавар)
     if (effectiveId) resolveIncident(effectiveId)
   }
+
+  // Test alarm / test-ok API дуудалт
+  const triggerTestAlarm = () => fetch('/api/test-alarm', { method: 'POST' }).catch(() => {})
+  const triggerTestOk    = () => fetch('/api/test-ok',    { method: 'POST' }).catch(() => {})
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -71,6 +81,31 @@ export default function EmergencyDashboard() {
 
           {/* Signal Path Indicator */}
           <SignalIndicator isActive={!!selectedIncident} />
+
+          {/* Test товч + 101 */}
+          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2">
+            <button
+              onClick={triggerTestAlarm}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--alert-critical)]/20 border border-[var(--alert-critical)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--alert-critical)] hover:bg-[var(--alert-critical)]/30 transition-colors"
+            >
+              <FlameKindling className="h-3 w-3" />
+              Туршилтын Дохио
+            </button>
+            <button
+              onClick={triggerTestOk}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--status-online)]/20 border border-[var(--status-online)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--status-online)] hover:bg-[var(--status-online)]/30 transition-colors"
+            >
+              <CheckCheck className="h-3 w-3" />
+              Хэвийн Байдал
+            </button>
+            <a
+              href="tel:101"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--signal-blue)]/20 border border-[var(--signal-blue)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--signal-blue)] hover:bg-[var(--signal-blue)]/30 transition-colors"
+            >
+              <Phone className="h-3 w-3" />
+              101 Дуудах
+            </a>
+          </div>
 
           {/* Live / Mock indicator */}
           <div className="absolute top-4 right-4 z-[1000]">
@@ -124,6 +159,9 @@ export default function EmergencyDashboard() {
           />
         </aside>
       </div>
+
+      {/* Event Log — доор нуугдах/гарах */}
+      <EventLog events={events} />
     </div>
   )
 }

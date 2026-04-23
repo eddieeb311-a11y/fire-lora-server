@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Incident, Gateway } from './types'
 import { mockIncidents, mockGateway } from './mock-data'
+import type { LiveEvent } from '@/components/dashboard/event-log'
 
 // ──────────────────────────────────────────────
 // Types matching server.js device shape
@@ -107,6 +108,7 @@ export function useLiveData() {
   const [gateway, setGateway]     = useState<Gateway>(mockGateway)
   const [isLive, setIsLive]       = useState(false)
   const [overrides, setOverrides] = useState<Record<string, StatusOverride>>({})
+  const [events, setEvents]       = useState<LiveEvent[]>([])
   const wsRef = useRef<WebSocket | null>(null)
 
   // ── Acknowledge: active → acknowledged ──────
@@ -144,14 +146,26 @@ export function useLiveData() {
           const msg = JSON.parse(ev.data as string)
           const now = new Date()
 
-          if (msg.type === 'init' || msg.type === 'update') {
+          if (msg.type === 'init') {
+            const devList: LiveDevice[] = Object.values(msg.devices || {})
+            if (devList.length > 0) {
+              const liveIncidents = devList
+                .filter(d => d.status === 'online' || d.totalAlarms > 0)
+                .map(d => deviceToIncident(d, now))
+              setIncidents(liveIncidents.length > 0 ? liveIncidents : mockIncidents)
+              setGateway(prev => devicesToGateway(devList, prev))
+            }
+            if (msg.history) setEvents((msg.history as LiveEvent[]).slice(0, 100))
+          }
+
+          if (msg.type === 'update') {
             const devList: LiveDevice[] = Object.values(msg.devices || {})
             if (devList.length > 0) {
               const liveIncidents = devList
                 .filter(d => d.status === 'online' || d.totalAlarms > 0)
                 .map(d => deviceToIncident(d, now))
 
-              // Шинэ alarm ирвэл тухайн incident-н override арилгана
+              // Шинэ alarm ирвэл override арилгана
               setOverrides(prev => {
                 const next = { ...prev }
                 liveIncidents.forEach(inc => {
@@ -162,6 +176,9 @@ export function useLiveData() {
 
               setIncidents(liveIncidents.length > 0 ? liveIncidents : mockIncidents)
               setGateway(prev => devicesToGateway(devList, prev))
+            }
+            if (msg.event) {
+              setEvents(prev => [msg.event as LiveEvent, ...prev].slice(0, 100))
             }
           }
         } catch { /* ignore */ }
@@ -194,5 +211,5 @@ export function useLiveData() {
     }
   })
 
-  return { incidents: mergedIncidents, gateway, isLive, acknowledgeIncident, resolveIncident }
+  return { incidents: mergedIncidents, gateway, isLive, events, acknowledgeIncident, resolveIncident }
 }
