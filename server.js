@@ -30,17 +30,18 @@ const CHAT_ID = process.env.CHAT_ID || ''
 // Location / device tables
 // ──────────────────────────────────────────────
 const LOCATION_MODE_MAP = {
-  1: { building: 'Төв Цамхаг А Блок',                  floor: '1F',  zone: 'Дэнлүүний танхим',     district: 'Баянгол дүүрэг',     lat: 47.9184, lng: 106.9177 },
-  2: { building: 'Төв Цамхаг А Блок',                  floor: 'B1',  zone: 'Цахилгааны өрөө',      district: 'Баянгол дүүрэг',     lat: 47.91845,lng: 106.91774 },
-  3: { building: 'Энхтайваны Өргөн Чөлөөний Цогцолбор',floor: '12',  zone: 'Серверийн өрөө',        district: 'Сүхбаатар дүүрэг',  lat: 47.9212, lng: 106.9234 },
-  4: { building: 'Улсын Их Дэлгүүр',                   floor: '3',   zone: 'Агуулах',               district: 'Чингэлтэй дүүрэг',  lat: 47.9156, lng: 106.9145 },
+  1: { building: 'А Блок', floor: '1-р давхар', zone: 'Дэнлүүний танхим',  district: 'Баянгол дүүрэг', lat: 47.9184,  lng: 106.9177  },
+  2: { building: 'А Блок', floor: 'Подвал',     zone: 'Цахилгааны өрөө',   district: 'Баянгол дүүрэг', lat: 47.91845, lng: 106.91774 },
+  3: { building: 'Б Блок', floor: '1-р давхар', zone: 'Агуулах',            district: 'Баянгол дүүрэг', lat: 47.9186,  lng: 106.9180  },
+  4: { building: 'Б Блок', floor: '—',          zone: 'Шатны буланд',       district: 'Баянгол дүүрэг', lat: 47.91855, lng: 106.91785 },
 }
 
+// Эхний байршлаар эхлүүлнэ — node-н товч дарахад payload[2] ирж өөрчлөгдөнө
 const DEVICE_LOCATIONS = {
   'fire-node-01': { ...LOCATION_MODE_MAP[1] },
-  'fire-node-02': { ...LOCATION_MODE_MAP[2] },
-  'fire-node-03': { ...LOCATION_MODE_MAP[3] },
-  'fire-node-04': { ...LOCATION_MODE_MAP[4] },
+  'fire-node-02': { ...LOCATION_MODE_MAP[1] },
+  'fire-node-03': { ...LOCATION_MODE_MAP[1] },
+  'fire-node-04': { ...LOCATION_MODE_MAP[1] },
 }
 
 const DEFAULT_LOCATION = {
