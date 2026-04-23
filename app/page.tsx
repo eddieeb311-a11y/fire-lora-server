@@ -2,23 +2,24 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Navigation } from 'lucide-react'
+import { Navigation, Wifi } from 'lucide-react'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { IncidentQueue } from '@/components/dashboard/incident-queue'
 import { IncidentDetails } from '@/components/dashboard/incident-details'
 import { SignalIndicator } from '@/components/dashboard/signal-indicator'
-import { mockIncidents, mockResponsePoints, mockGateway } from '@/lib/mock-data'
+import { mockResponsePoints } from '@/lib/mock-data'
+import { useLiveData } from '@/lib/use-live-data'
 
 // Dynamic import for map to avoid SSR issues with Leaflet
 const ResponseMap = dynamic(
   () => import('@/components/dashboard/response-map').then(mod => mod.ResponseMap),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center bg-[oklch(0.1_0.005_260)]">
         <div className="text-center">
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-[var(--signal-blue)] border-t-transparent mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading map...</p>
+          <p className="text-sm text-muted-foreground">Газрын зураг ачааллаж байна...</p>
         </div>
       </div>
     )
@@ -26,35 +27,35 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
-    mockIncidents[0]?.id || null
-  )
+  const { incidents, gateway, isLive } = useLiveData()
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
 
-  const selectedIncident = mockIncidents.find(i => i.id === selectedIncidentId) || null
-  const nearestResponse = mockResponsePoints.find(r => r.isNearest) || null
+  // Auto-select first active incident, then first incident overall
+  const firstActiveId = incidents.find(i => i.status === 'active')?.id ?? null
+  const effectiveId   = selectedIncidentId ?? firstActiveId ?? incidents[0]?.id ?? null
+
+  const selectedIncident  = incidents.find(i => i.id === effectiveId) || null
+  const nearestResponse   = mockResponsePoints.find(r => r.isNearest) || null
 
   const handleAcknowledge = () => {
-    // In a real app, this would update the incident status
-    console.log('[v0] Acknowledging incident:', selectedIncidentId)
+    console.log('[FireBridge] Дуудлага хүлээн авав:', effectiveId)
   }
-
   const handleEscalate = () => {
-    // In a real app, this would escalate the incident
-    console.log('[v0] Escalating incident:', selectedIncidentId)
+    console.log('[FireBridge] Нэмэлт хүч дуудав:', effectiveId)
   }
 
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <DashboardHeader />
+      <DashboardHeader incidents={incidents} isLive={isLive} />
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Incident Queue */}
         <aside className="w-80 flex-shrink-0 border-r border-border overflow-hidden">
           <IncidentQueue
-            incidents={mockIncidents}
-            selectedId={selectedIncidentId}
+            incidents={incidents}
+            selectedId={effectiveId}
             onSelect={setSelectedIncidentId}
           />
         </aside>
@@ -64,11 +65,23 @@ export default function EmergencyDashboard() {
           <ResponseMap
             incident={selectedIncident}
             responsePoints={mockResponsePoints}
-            gateway={mockGateway}
+            gateway={gateway}
           />
-          
+
           {/* Signal Path Indicator */}
           <SignalIndicator isActive={!!selectedIncident} />
+
+          {/* Live / Mock indicator */}
+          <div className="absolute top-4 right-4 z-[1000]">
+            <div className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${
+              isLive
+                ? 'bg-[var(--status-online)]/20 border border-[var(--status-online)]/40 text-[var(--status-online)]'
+                : 'bg-muted/80 border border-border text-muted-foreground'
+            }`}>
+              <Wifi className="h-3 w-3" />
+              {isLive ? 'Шууд LoRa Холболт' : 'Туршилтын Өгөгдөл'}
+            </div>
+          </div>
 
           {/* Operational Status Banner */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
@@ -104,7 +117,7 @@ export default function EmergencyDashboard() {
           <IncidentDetails
             incident={selectedIncident}
             nearestResponse={nearestResponse}
-            gateway={mockGateway}
+            gateway={gateway}
             onAcknowledge={handleAcknowledge}
             onEscalate={handleEscalate}
           />

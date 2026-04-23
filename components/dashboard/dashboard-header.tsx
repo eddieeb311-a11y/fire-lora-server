@@ -12,12 +12,17 @@ import {
   ShieldAlert
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { mockIncidents } from '@/lib/mock-data'
+import type { Incident } from '@/lib/types'
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  incidents: Incident[]
+  isLive?: boolean
+}
+
+export function DashboardHeader({ incidents, isLive = false }: DashboardHeaderProps) {
   const [currentTime, setCurrentTime] = useState(new Date())
-  const activeCount = mockIncidents.filter(i => i.status === 'active').length
-  const totalCount = mockIncidents.length
+  const activeCount = incidents.filter(i => i.status === 'active').length
+  const totalCount  = incidents.length
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -43,7 +48,7 @@ export function DashboardHeader() {
 
       {/* Center Status */}
       <div className="flex items-center gap-4">
-        {/* Active incident alert — most prominent */}
+        {/* Active incident alert */}
         <div className="flex items-center gap-2 rounded-md bg-[var(--alert-critical)]/15 border border-[var(--alert-critical)]/35 px-3 py-1.5">
           <ShieldAlert className="h-3.5 w-3.5 text-[var(--alert-critical)]" />
           <span className="flex h-2 w-2 rounded-full bg-[var(--alert-critical)] animate-pulse" />
@@ -58,8 +63,10 @@ export function DashboardHeader() {
         </div>
         <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <Wifi className="h-4 w-4 text-[var(--status-online)]" />
-          <span className="text-xs font-medium text-muted-foreground">LoRaWAN Холбоо</span>
+          <Wifi className={`h-4 w-4 ${isLive ? 'text-[var(--status-online)]' : 'text-muted-foreground'}`} />
+          <span className="text-xs font-medium text-muted-foreground">
+            {isLive ? 'LoRaWAN Шууд' : 'LoRaWAN Холболт'}
+          </span>
         </div>
       </div>
 
@@ -80,9 +87,11 @@ export function DashboardHeader() {
         {/* Notification Bell */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--alert-critical)] text-[10px] font-bold text-white">
-            3
-          </span>
+          {activeCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--alert-critical)] text-[10px] font-bold text-white">
+              {activeCount}
+            </span>
+          )}
         </Button>
 
         {/* Settings */}
