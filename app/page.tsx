@@ -27,7 +27,7 @@ const ResponseMap = dynamic(
 )
 
 export default function EmergencyDashboard() {
-  const { incidents, gateway, isLive } = useLiveData()
+  const { incidents, gateway, isLive, acknowledgeIncident, resolveIncident } = useLiveData()
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
 
   // Auto-select first active incident, then first incident overall
@@ -38,10 +38,11 @@ export default function EmergencyDashboard() {
   const nearestResponse   = mockResponsePoints.find(r => r.isNearest) || null
 
   const handleAcknowledge = () => {
-    console.log('[FireBridge] Дуудлага хүлээн авав:', effectiveId)
+    if (effectiveId) acknowledgeIncident(effectiveId)
   }
   const handleEscalate = () => {
-    console.log('[FireBridge] Нэмэлт хүч дуудав:', effectiveId)
+    // Хүлээн авч, resolved болгоно (нэмэлт хүч явсан = дуусгавар)
+    if (effectiveId) resolveIncident(effectiveId)
   }
 
   return (

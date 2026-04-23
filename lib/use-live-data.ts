@@ -92,13 +92,38 @@ function devicesToGateway(devices: LiveDevice[], base: Gateway): Gateway {
 }
 
 // ──────────────────────────────────────────────
+// Local override type (acknowledge / resolve)
+// ──────────────────────────────────────────────
+interface StatusOverride {
+  status: Incident['status']
+  timeAcknowledged?: Date
+}
+
+// ──────────────────────────────────────────────
 // Hook
 // ──────────────────────────────────────────────
 export function useLiveData() {
   const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
   const [gateway, setGateway]     = useState<Gateway>(mockGateway)
   const [isLive, setIsLive]       = useState(false)
+  const [overrides, setOverrides] = useState<Record<string, StatusOverride>>({})
   const wsRef = useRef<WebSocket | null>(null)
+
+  // ── Acknowledge: active → acknowledged ──────
+  const acknowledgeIncident = (id: string) => {
+    setOverrides(prev => ({
+      ...prev,
+      [id]: { status: 'acknowledged', timeAcknowledged: new Date() },
+    }))
+  }
+
+  // ── Resolve: → resolved ─────────────────────
+  const resolveIncident = (id: string) => {
+    setOverrides(prev => ({
+      ...prev,
+      [id]: { status: 'resolved' },
+    }))
+  }
 
   useEffect(() => {
     let destroyed = false
@@ -125,7 +150,16 @@ export function useLiveData() {
               const liveIncidents = devList
                 .filter(d => d.status === 'online' || d.totalAlarms > 0)
                 .map(d => deviceToIncident(d, now))
-              // Always show something — fall back to mock if no live data yet
+
+              // Шинэ alarm ирвэл тухайн incident-н override арилгана
+              setOverrides(prev => {
+                const next = { ...prev }
+                liveIncidents.forEach(inc => {
+                  if (inc.status === 'active') delete next[inc.id]
+                })
+                return next
+              })
+
               setIncidents(liveIncidents.length > 0 ? liveIncidents : mockIncidents)
               setGateway(prev => devicesToGateway(devList, prev))
             }
@@ -149,5 +183,16 @@ export function useLiveData() {
     }
   }, [])
 
-  return { incidents, gateway, isLive }
+  // Override-г incident-тэй нийлүүлэх
+  const mergedIncidents = incidents.map(inc => {
+    const ov = overrides[inc.id]
+    if (!ov) return inc
+    return {
+      ...inc,
+      status: ov.status,
+      timeAcknowledged: ov.timeAcknowledged ?? inc.timeAcknowledged,
+    }
+  })
+
+  return { incidents: mergedIncidents, gateway, isLive, acknowledgeIncident, resolveIncident }
 }
