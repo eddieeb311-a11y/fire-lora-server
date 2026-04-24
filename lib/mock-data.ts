@@ -98,7 +98,7 @@ export const mockGateway: Gateway = {
   battery: 87,
   rssi: -72,
   snr: 9.5,
-  lastHeartbeat: new Date(Date.now() - 15000),
+  lastHeartbeat: new Date(0),
   status: 'online',
 }
 

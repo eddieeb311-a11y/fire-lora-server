@@ -1,21 +1,49 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 /**
  * Alarm ирэхэд siren дуу тоглуулна (Web Audio API).
  * isActive=true → тоглуулна, false → зогсооно.
+ * Хэрэглэгч анх дарахад AudioContext unlock хийнэ.
  */
 export function useAlarmSound(isActive: boolean) {
   const audioCtxRef   = useRef<AudioContext | null>(null)
   const oscillatorRef = useRef<OscillatorNode | null>(null)
   const gainRef       = useRef<GainNode | null>(null)
   const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const unlockedRef   = useRef(false)
+  const pendingRef    = useRef(false)
+
+  const unlock = useCallback(() => {
+    if (unlockedRef.current) return
+    unlockedRef.current = true
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().then(() => {
+        if (pendingRef.current) startSound()
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    window.addEventListener('click', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('click', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [unlock])
 
   useEffect(() => {
     if (isActive) {
-      startSound()
+      pendingRef.current = true
+      if (unlockedRef.current) startSound()
     } else {
+      pendingRef.current = false
       stopSound()
     }
     return () => stopSound()

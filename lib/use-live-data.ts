@@ -104,8 +104,8 @@ interface StatusOverride {
 // Hook
 // ──────────────────────────────────────────────
 export function useLiveData() {
-  const [incidents, setIncidents] = useState<Incident[]>(mockIncidents)
-  const [gateway, setGateway]     = useState<Gateway>(mockGateway)
+  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [gateway, setGateway]     = useState<Gateway>({ ...mockGateway, lastHeartbeat: new Date(0) })
   const [isLive, setIsLive]       = useState(false)
   const [overrides, setOverrides] = useState<Record<string, StatusOverride>>({})
   const [events, setEvents]       = useState<LiveEvent[]>([])
@@ -152,7 +152,7 @@ export function useLiveData() {
               const liveIncidents = devList
                 .filter(d => d.status === 'online' || d.totalAlarms > 0)
                 .map(d => deviceToIncident(d, now))
-              setIncidents(liveIncidents.length > 0 ? liveIncidents : mockIncidents)
+              setIncidents(liveIncidents)
               setGateway(prev => devicesToGateway(devList, prev))
             }
             if (msg.history) setEvents((msg.history as LiveEvent[]).slice(0, 100))
@@ -174,7 +174,7 @@ export function useLiveData() {
                 return next
               })
 
-              setIncidents(liveIncidents.length > 0 ? liveIncidents : mockIncidents)
+              setIncidents(liveIncidents)
               setGateway(prev => devicesToGateway(devList, prev))
             }
             if (msg.event) {

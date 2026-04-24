@@ -20,11 +20,12 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ incidents, isLive = false }: DashboardHeaderProps) {
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const activeCount = incidents.filter(i => i.status === 'active').length
   const totalCount  = incidents.length
 
   useEffect(() => {
+    setCurrentTime(new Date())
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
@@ -75,10 +76,10 @@ export function DashboardHeader({ incidents, isLive = false }: DashboardHeaderPr
         {/* Time Display */}
         <div className="rounded-lg bg-secondary px-3 py-1.5">
           <div className="font-mono text-sm font-semibold text-foreground">
-            {format(currentTime, 'HH:mm:ss')}
+            {currentTime ? format(currentTime, 'HH:mm:ss') : '--:--:--'}
           </div>
           <div className="text-[10px] text-muted-foreground">
-            {format(currentTime, 'yyyy.MM.dd')} · УЦ UTC+8
+            {currentTime ? format(currentTime, 'yyyy.MM.dd') : '----.--.--'} · УЦ UTC+8
           </div>
         </div>
 
